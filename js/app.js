@@ -75,7 +75,7 @@ class UniversityApp {
             userRoleEl.textContent = this.currentUser.role === 'admin' ? 'YÖNETİCİ' : 'KOORDİNATÖR';
         }
         if (adminLink) {
-            adminLink.style.display = this.currentUser.role === 'admin' ? 'inline-flex' : 'none';
+            adminLink.style.display = 'inline-flex';
         }
     }
 
