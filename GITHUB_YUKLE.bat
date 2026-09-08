@@ -31,7 +31,7 @@ if "%SECIM%"=="1" (
     echo.
     echo [2/2] GitHub'a aktariliyor...
     echo (Eger tarayici veya yetkilendirme penceresi acilirsa lutfen onaylayin)
-    %GIT% push -u origin main
+    %GIT% push -u origin main --force
     goto SONUC
 )
 
@@ -45,7 +45,7 @@ if "%SECIM%"=="2" (
     )
     echo.
     echo [2/2] Token ile GitHub'a yukleniyor...
-    %GIT% push https://%GHTOKEN%@github.com/yavuzkayacan/hoca_ders.git main
+    %GIT% push -f https://%GHTOKEN%@github.com/yavuzkayacan/hoca_ders.git main
     goto SONUC
 )
 
