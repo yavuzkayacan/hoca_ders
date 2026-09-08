@@ -1,9 +1,50 @@
-# İstanbul 29 Mayıs Üniversitesi - Ders, Derslik ve Hoca Eşleştirme Sistemi
-## Canlıya Alma (Deployment) ve Microsoft 365 Entegrasyon Kılavuzu
+# 🎓 İstanbul 29 Mayıs Üniversitesi - Ders, Derslik ve Hoca Eşleştirme Sistemi
 
-Bu doküman; sistemin İstanbul 29 Mayıs Üniversitesi'nin resmi alt alan adına (`dersprogrami.29mayis.edu.tr`), web hosting ortamına (cPanel, Plesk, Linux Apache/Nginx) nasıl canlıya alınacağını ve üniversitenin **Microsoft 365 (Office 365 / Exchange Online)** e-posta altyapısıyla nasıl çalıştırılacağını adım adım açıklar.
+İstanbul 29 Mayıs Üniversitesi için özel olarak geliştirilmiş, web tabanlı interaktif ders programı, derslik planlama ve hoca eşleştirme otomasyonu.
+
+![İstanbul 29 Mayıs Üniversitesi](https://img.shields.io/badge/Üniversite-İstanbul%2029%20Mayıs-7B1123?style=for-the-badge)
+![Durum](https://img.shields.io/badge/Sürüm-1.0.0-gold?style=for-the-badge)
+![Altyapı](https://img.shields.io/badge/Altyapı-PHP%20%7C%20MySQL%20%7C%20Python%20SQLite-102A43?style=for-the-badge)
 
 ---
+
+## 🌟 Temel Özellikler
+
+1. **Excel Benzeri İnteraktif Ders Programı Matrisi (08:00 - 20:00):**
+   - 12 akademik saat bloğu (08:00-09:00'dan 19:00-20:00'ye kadar).
+   - Mouse ile hücreleri sürükleyerek blok seçimi yapma.
+   - Seçilen hücreleri otomatik birleştirme (`rowspan`) ve blok ders atama.
+2. **Akıllı Çakışma Önleme Motoru (Conflict Prevention Engine):**
+   - **Sınıf Çakışması:** Seçilen günde ve saatte sınıf başka bir bölüm veya ders tarafından doluysa anında uyarı ve müsait alternatif derslik önerisi.
+   - **Hoca Çakışması:** İlgili öğretim üyesinin aynı saatte başka bir şubede veya bölümde dersi varsa anında ikaz.
+3. **Bölüm ve Fakülte İzolasyonu:**
+   - Her bölüm kendi koordinatör hesabı ile giriş yapar, sadece kendi programını düzenler.
+4. **Bölüme Özel Ders ve Hoca Havuzu Yönetimi:**
+   - Koordinatörler kendi bölümlerine ait dersleri (kod ve ad) ve hocaları ekleyebilir, güncelleyebilir ve silebilir.
+5. **Kampüs Genel Doluluk Matrisi:**
+   - Tüm kampüs dersliklerinin gün ve saat bazındaki anlık doluluğunu hem **Süper Admin** hem de **Bölüm Koordinatörleri** canlı olarak izleyebilir.
+6. **Süper Admin Yönetim Paneli:**
+   - Tüm bölümlerin programlarını, ders ve hoca havuzlarını yönetme.
+   - Kullanıcı hesaplarını, kurumsal e-posta adreslerini ve şifreleri görüntüleme (👁️ göster/gizle anahtarı ile).
+7. **Microsoft 365 E-Posta Entegrasyonu:**
+   - **Şifremi Unuttum:** Kurumsal `@29mayis.edu.tr` e-posta adresine güvenli şifre sıfırlama bağlantısı gönderimi.
+   - **Hocalara Program Gönder:** Koordinatörün tek tıkla tüm bölüm hocalarına kişiselleştirilmiş haftalık ders çizelgelerini e-posta ile iletmesi.
+
+---
+
+## 🚀 Hızlı Başlangıç (Yerel Bilgisayarda Çalıştırma)
+
+1. Proje dizinindeki **`BASLAT.bat`** dosyasına çift tıklayın.
+2. Otomatik olarak yerel sunucu açılacak ve tarayıcınızda `http://localhost:8080/login.html` sayfası açılacaktır.
+
+---
+
+## ☁️ GitHub'a Yükleme
+
+Projeyi GitHub deponuza (`https://github.com/yavuzkayacan/hoca_ders`) göndermek için klasördeki **`GITHUB_YUKLE.bat`** dosyasına çift tıklamanız yeterlidir.
+
+---
+
 
 ## 📬 1. Microsoft 365 E-Posta Altyapısı Canlıda Nasıl Çalışır?
 
