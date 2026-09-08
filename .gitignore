@@ -1,0 +1,8 @@
+# Yerel veritabanı ve önbellek dosyaları
+database.db
+*.pyc
+__pycache__/
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

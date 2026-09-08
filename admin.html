@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Yönetici Paneli | İstanbul 29 Mayıs Üniversitesi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/grid.css">
+    <style>
+        .admin-nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--surface-border);
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-nav-btn {
+            border: none;
+            background: transparent;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-nav-btn:hover {
+            color: var(--navy);
+        }
+
+        .admin-nav-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--surface-border);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .admin-card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--surface-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface-alt);
+        }
+
+        .admin-card-header h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        .data-table th {
+            background: #F8FAFC;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            color: var(--navy);
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .data-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--surface-border);
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover {
+            background: #F8FAFC;
+        }
+
+        .user-role-badge {
+            padding: 0.2rem 0.55rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-admin {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge-coord {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Üst Kurumsal Bar -->
+    <header class="top-navbar">
+        <a href="admin.html" class="nav-brand">
+            <div class="nav-logo-icon">29M</div>
+            <div class="brand-text">
+                <h1>İSTANBUL 29 MAYIS ÜNİVERSİTESİ</h1>
+                <span>Sistem Yönetim & İdari Kontrol Paneli</span>
+            </div>
+        </a>
+
+        <div class="nav-actions">
+            <a href="index.html" class="btn btn-gold btn-sm">
+                📅 Bölüm Programına Dön
+            </a>
+            <div class="user-badge">
+                <span>🛡️ <span id="adminName">Sistem Yöneticisi</span></span>
+                <span class="role-tag">SÜPER ADMİN</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="sessionStorage.removeItem('29m_user'); window.location.href='login.html';" style="color:white; border-color:rgba(255,255,255,0.3); background: transparent;">
+                Çıkış Yap
+            </button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Sekmeler -->
+        <div class="admin-nav-tabs">
+            <button type="button" class="admin-nav-btn active" data-tab="users">
+                👥 Kullanıcı Yönetimi & Şifreler
+            </button>
+            <button type="button" class="admin-nav-btn" data-tab="admin_courses">
+                📚 Üniversite Ders Havuzu
+            </button>
+            <button type="button" class="admin-nav-btn" data-tab="admin_instructors">
+                👨‍🏫 Hoca Havuzu (Öğretim Elemanları)
+            </button>
+            <button type="button" class="admin-nav-btn" data-tab="classrooms">
+                🏢 Derslikler & Kampüs Odaları
+            </button>
+            <button type="button" class="admin-nav-btn" data-tab="occupancy">
+                📊 Üniversite Geneli Doluluk Matrisi
+            </button>
+        </div>
+
+        <!-- SEKME 1: KULLANICILAR -->
+        <section class="admin-tab-section" id="tabSection_users">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div>
+                        <h3>Sistem Kullanıcıları, E-Postalar ve Giriş Şifreleri</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Kullanıcıların şifrelerini ve kurumsal e-postalarını doğrudan görüntüleyebilir, yetki ve bölüm tanımlayabilirsiniz.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('addUserModal').classList.add('active');">
+                        ➕ Yeni Kullanıcı Ekle
+                    </button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Kullanıcı Adı</th>
+                                <th>Ad Soyad</th>
+                                <th>Kurumsal E-Posta</th>
+                                <th>Giriş Şifresi</th>
+                                <th>Rol / Yetki</th>
+                                <th>Atandığı Bölüm / Fakülte</th>
+                                <th style="text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKME 2: TÜM ÜNİVERSİTE DERS HAVUZU -->
+        <section class="admin-tab-section" id="tabSection_admin_courses" style="display: none;">
+            <div class="admin-card">
+                <div class="admin-card-header" style="flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3>Üniversite Geneli Ders Havuzu</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Tüm fakülte ve bölümlerin derslerini listeleyebilir, yeni ders tanımlayabilir veya düzenleyebilirsiniz.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <select id="adminCourseDeptFilter" class="form-control" style="width: 220px; padding: 0.4rem 0.6rem;">
+                            <option value="">Tüm Bölümler</option>
+                        </select>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('addAdminCourseModal').classList.add('active');">
+                            ➕ Yeni Ders Ekle
+                        </button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ders Kodu</th>
+                                <th>Ders Adı</th>
+                                <th>Bağlı Bölüm</th>
+                                <th>Sınıf</th>
+                                <th>Haftalık Saat</th>
+                                <th style="text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminCoursesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKME 3: TÜM ÜNİVERSİTE HOCA HAVUZU -->
+        <section class="admin-tab-section" id="tabSection_admin_instructors" style="display: none;">
+            <div class="admin-card">
+                <div class="admin-card-header" style="flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3>Öğretim Elemanları (Hoca Havuzu)</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Üniversite kadrosundaki öğretim üyelerini bölüm bazında yönetebilirsiniz.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <select id="adminInstDeptFilter" class="form-control" style="width: 220px; padding: 0.4rem 0.6rem;">
+                            <option value="">Tüm Bölümler</option>
+                        </select>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('addAdminInstModal').classList.add('active');">
+                            ➕ Yeni Hoca Ekle
+                        </button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Unvan</th>
+                                <th>Ad Soyad</th>
+                                <th>Bölüm</th>
+                                <th>Kurumsal E-Posta</th>
+                                <th style="text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminInstructorsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKME 4: DERSLİKLER -->
+        <section class="admin-tab-section" id="tabSection_classrooms" style="display: none;">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <div>
+                        <h3>Kampüs Derslikleri ve Kapasite Yönetimi</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">A, B, C Blok derslikleri, amfiler ve bilgisayar laboratuvarlarının listesi.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('addClassroomModal').classList.add('active');">
+                        ➕ Yeni Derslik Ekle
+                    </button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Derslik Kodu</th>
+                                <th>Derslik Adı</th>
+                                <th>Bina / Blok</th>
+                                <th>Tür</th>
+                                <th>Kapasite</th>
+                                <th>Donanım Özellikleri</th>
+                                <th style="text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classroomsTableBody">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKME 3: TÜM KAMPÜS DOLULUK MATRİSİ -->
+        <section class="admin-tab-section" id="tabSection_occupancy" style="display: none;">
+            <div class="admin-card">
+                <div class="admin-card-header" style="flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3>Tüm Üniversite Derslik Doluluk Takvimi</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Hangi dersliğin hangi gün ve saatte hangi bölüm tarafından kullanıldığını anlık izleyin.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <select id="matrixDayFilter" class="form-control" style="width: 140px; padding: 0.4rem 0.6rem;">
+                            <option value="Pazartesi">Pazartesi</option>
+                            <option value="Salı">Salı</option>
+                            <option value="Çarşamba">Çarşamba</option>
+                            <option value="Perşembe">Perşembe</option>
+                            <option value="Cuma">Cuma</option>
+                            <option value="Cumartesi">Cumartesi</option>
+                        </select>
+                        <select id="matrixBuildingFilter" class="form-control" style="width: 140px; padding: 0.4rem 0.6rem;">
+                            <option value="">Tüm Binalar</option>
+                            <option value="A Blok">A Blok</option>
+                            <option value="B Blok">B Blok</option>
+                            <option value="C Blok">C Blok</option>
+                            <option value="Rektörlük Binası">Rektörlük</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="occupancyMatrixContainer" class="grid-wrapper" style="border:none; border-radius:0;">
+                    <!-- JS ile render edilecek -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: KULLANICI EKLE -->
+    <div class="modal-overlay" id="addUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👤 Yeni Kullanıcı Oluştur</h3>
+                <button type="button" class="modal-close" onclick="document.getElementById('addUserModal').classList.remove('active');">&times;</button>
+            </div>
+            <form id="addUserForm">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newUsername">Kullanıcı Adı</label>
+                            <input type="text" id="newUsername" class="form-control" placeholder="Örn: psyc_baskan" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">Şifre</label>
+                            <input type="password" id="newPassword" class="form-control" placeholder="Varsayılan: 123456">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newFullName">Ad Soyad</label>
+                            <input type="text" id="newFullName" class="form-control" placeholder="Örn: Prof. Dr. Ahmet Yılmaz" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newEmail">E-Posta</label>
+                            <input type="email" id="newEmail" class="form-control" placeholder="ahmet@29mayis.edu.tr" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="userRole">Rol / Yetki Türü</label>
+                        <select id="userRole" class="form-control">
+                            <option value="coordinator">Bölüm Koordinatörü (Kendi bölüm sayfasını düzenler)</option>
+                            <option value="admin">Süper Yönetici (Tüm yetkiler)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userFaculty">Bağlı Olduğu Fakülte</label>
+                        <select id="userFaculty" class="form-control">
+                            <option value="">-- Fakülte Seçiniz --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userDepartment">Bağlı Olduğu Bölüm</label>
+                        <select id="userDepartment" class="form-control">
+                            <option value="">-- Önce Fakülte Seçiniz --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('addUserModal').classList.remove('active');">İptal</button>
+                    <button type="submit" class="btn btn-primary">💾 Kullanıcıyı Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DERSLİK EKLE -->
+    <div class="modal-overlay" id="addClassroomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🏢 Yeni Kampüs Dersliği Ekle</h3>
+                <button type="button" class="modal-close" onclick="document.getElementById('addClassroomModal').classList.remove('active');">&times;</button>
+            </div>
+            <form id="addClassroomForm">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="roomCode">Derslik Kodu</label>
+                            <input type="text" id="roomCode" class="form-control" placeholder="Örn: B-302" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="roomBuilding">Bina / Blok</label>
+                            <select id="roomBuilding" class="form-control" required>
+                                <option value="A Blok">A Blok</option>
+                                <option value="B Blok">B Blok</option>
+                                <option value="C Blok">C Blok</option>
+                                <option value="Rektörlük Binası">Rektörlük Binası</option>
+                                <option value="Merkezi Derslikler">Merkezi Derslikler</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="roomName">Derslik Tam Adı</label>
+                        <input type="text" id="roomName" class="form-control" placeholder="Örn: B Blok 302 Nolu Seminer Salonu" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="roomType">Oda Türü</label>
+                            <select id="roomType" class="form-control">
+                                <option value="standard">Standart Derslik</option>
+                                <option value="amfi">Büyük Amfi</option>
+                                <option value="lab">Bilgisayar Laboratuvarı</option>
+                                <option value="seminar">Seminer / Toplantı Salonu</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="roomCapacity">Kapasite (Kişi)</label>
+                            <input type="number" id="roomCapacity" class="form-control" value="50" min="5" max="500">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="roomFeatures">Donanım ve Ekipman Özellikleri</label>
+                        <input type="text" id="roomFeatures" class="form-control" placeholder="Örn: Projeksiyon, Akıllı Tahta, 45 PC, Ses Sistemi">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('addClassroomModal').classList.remove('active');">İptal</button>
+                    <button type="submit" class="btn btn-primary">💾 Dersliği Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DERS EKLE (ADMIN) -->
+    <div class="modal-overlay" id="addAdminCourseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📚 Yeni Ders Tanımla (Admin)</h3>
+                <button type="button" class="modal-close" onclick="document.getElementById('addAdminCourseModal').classList.remove('active');">&times;</button>
+            </div>
+            <form id="addAdminCourseForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="adminCourseDept">Bağlı Olduğu Bölüm</label>
+                        <select id="adminCourseDept" class="form-control" required></select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="adminCourseCode">Ders Kodu</label>
+                            <input type="text" id="adminCourseCode" class="form-control" placeholder="Örn: CENG302" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminCourseGrade">Sınıf Seviyesi</label>
+                            <select id="adminCourseGrade" class="form-control">
+                                <option value="1">1. Sınıf</option>
+                                <option value="2">2. Sınıf</option>
+                                <option value="3">3. Sınıf</option>
+                                <option value="4">4. Sınıf</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminCourseName">Ders Adı</label>
+                        <input type="text" id="adminCourseName" class="form-control" placeholder="Örn: İşletim Sistemleri" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminCourseHours">Haftalık Ders Saati</label>
+                        <input type="number" id="adminCourseHours" class="form-control" value="3" min="1" max="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('addAdminCourseModal').classList.remove('active');">İptal</button>
+                    <button type="submit" class="btn btn-primary">💾 Dersi Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: HOCA EKLE (ADMIN) -->
+    <div class="modal-overlay" id="addAdminInstModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👨‍🏫 Yeni Öğretim Elemanı Ekle (Admin)</h3>
+                <button type="button" class="modal-close" onclick="document.getElementById('addAdminInstModal').classList.remove('active');">&times;</button>
+            </div>
+            <form id="addAdminInstForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="adminInstDept">Bağlı Olduğu Bölüm</label>
+                        <select id="adminInstDept" class="form-control" required></select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="adminInstTitle">Akademik Unvan</label>
+                            <select id="adminInstTitle" class="form-control">
+                                <option value="Prof. Dr.">Prof. Dr.</option>
+                                <option value="Doç. Dr.">Doç. Dr.</option>
+                                <option value="Dr. Öğr. Üyesi">Dr. Öğr. Üyesi</option>
+                                <option value="Öğr. Gör.">Öğr. Gör.</option>
+                                <option value="Arş. Gör.">Arş. Gör.</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminInstName">Ad Soyad</label>
+                            <input type="text" id="adminInstName" class="form-control" placeholder="Örn: Ayşe Demir" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminInstEmail">Kurumsal E-Posta</label>
+                        <input type="email" id="adminInstEmail" class="form-control" placeholder="ayse@29mayis.edu.tr" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('addAdminInstModal').classList.remove('active');">İptal</button>
+                    <button type="submit" class="btn btn-primary">💾 Hocayı Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bildirim Konteyneri -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="js/mock-data.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

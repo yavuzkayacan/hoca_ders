@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haftalık Ders Programı | İstanbul 29 Mayıs Üniversitesi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/grid.css">
+</head>
+<body>
+
+    <!-- Üst Kurumsal Bar -->
+    <header class="top-navbar">
+        <a href="index.html" class="nav-brand">
+            <div class="nav-logo-icon">29M</div>
+            <div class="brand-text">
+                <h1>İSTANBUL 29 MAYIS ÜNİVERSİTESİ</h1>
+                <span>Ders, Derslik ve Hoca Eşleştirme Sistemi</span>
+            </div>
+        </a>
+
+        <div class="nav-actions">
+            <a href="admin.html" class="btn btn-gold btn-sm" id="navAdminLink" style="display: none;">
+                🛡️ Yönetici Paneli
+            </a>
+            <div class="user-badge">
+                <span>👤 <span id="navUserName">Kullanıcı</span></span>
+                <span class="role-tag" id="navUserRole">KOORDİNATÖR</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="btnLogout" style="color:white; border-color:rgba(255,255,255,0.3); background: transparent;">
+                Çıkış Yap
+            </button>
+        </div>
+    </header>
+
+    <!-- Kontrol ve Filtre Çubuğu -->
+    <section class="control-bar">
+        <div class="dept-info">
+            <span class="faculty-pill" id="currentFacultyBadge">Fakülte Yükleniyor...</span>
+            <h2 class="dept-title" id="currentDeptTitle">Haftalık Ders Programı</h2>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <!-- Sınıf Seviyesi Filtreleri -->
+            <div class="filter-group">
+                <button type="button" class="filter-btn active" data-grade="0">Tüm Sınıflar</button>
+                <button type="button" class="filter-btn" data-grade="1">1. Sınıf</button>
+                <button type="button" class="filter-btn" data-grade="2">2. Sınıf</button>
+                <button type="button" class="filter-btn" data-grade="3">3. Sınıf</button>
+                <button type="button" class="filter-btn" data-grade="4">4. Sınıf</button>
+            </div>
+
+            <!-- Eylemler -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-navy btn-sm" id="btnOpenCoordOccupancy" title="Kampüsteki Tüm Sınıfların Doluluk Durumunu İncele">
+                    🏢 Kampüs Doluluk Durumu
+                </button>
+                <button type="button" class="btn btn-gold btn-sm" id="btnOpenPoolModal" title="Bölümün Ders ve Hoca Havuzunu Yönet">
+                    📚 Ders & Hoca Havuzu
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnOpenSendModal" title="Bölüm Hocalarına Haftalık Programı E-Posta ile Gönder">
+                    ✉️ Hocalara Program Gönder
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" id="btnExportExcel" title="Excel Formatında İndir (CSV)">
+                    📥 Excel İndir
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" id="btnPrintSchedule" title="Yazdır veya PDF Kaydet">
+                    🖨️ Yazdır / PDF
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ana Çalışma Alanı -->
+    <main class="main-container">
+        <!-- İpucu & Seçim Bilgilendirme Bandı -->
+        <div class="instruction-banner" id="selectionBanner">
+            <div class="hint-title">
+                <span>💡</span>
+                <span id="selectionText">Tabloda ders atamak istediğiniz saat hücrelerini tıklayıp sürükleyerek seçebilirsiniz.</span>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnOpenAddModal" style="display: none;">
+                ➕ Seçilen Hücreleri Birleştir & Ders Ata
+            </button>
+        </div>
+
+        <!-- Excel Tarzı Program Izgarası -->
+        <div class="grid-wrapper" id="scheduleGridWrapper">
+            <!-- JavaScript ile dinamik render edilecek -->
+        </div>
+    </main>
+
+    <!-- DERS ATAMA & HÜCRE BİRLEŞTİRME MODALI -->
+    <div class="modal-overlay" id="addCourseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📚 Ders ve Derslik Eşleştir</h3>
+                <button type="button" class="modal-close" id="btnCloseModal">&times;</button>
+            </div>
+
+            <form id="addCourseForm">
+                <div class="modal-body">
+                    <!-- Seçilen Saat Aralığı Bilgisi -->
+                    <div style="background: var(--surface-alt); border: 1px solid var(--surface-border); border-radius: var(--radius-md); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">Seçilen Gün:</span>
+                            <strong style="color: var(--primary); font-size: 1rem;" id="modalSelectedDay">Pazartesi</strong>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">Seçilen Saat Aralığı:</span>
+                            <strong style="color: var(--navy); font-size: 0.95rem;" id="modalSelectedTime">08:30 - 11:20 (3 Saat)</strong>
+                        </div>
+                    </div>
+
+                    <!-- Bölüm Dersleri Seçimi -->
+                    <div class="form-group">
+                        <label for="slotCourseSelect">Kayıtlı Ders Listesinden Seç</label>
+                        <select id="slotCourseSelect" class="form-control">
+                            <option value="">-- Listeden Seçin veya Aşağıya Yazın --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="slotCourseCode">Ders Kodu</label>
+                            <input type="text" id="slotCourseCode" class="form-control" placeholder="Örn: CENG101" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="slotGradeLevel">Sınıf Seviyesi</label>
+                            <select id="slotGradeLevel" class="form-control">
+                                <option value="1">1. Sınıf</option>
+                                <option value="2">2. Sınıf</option>
+                                <option value="3">3. Sınıf</option>
+                                <option value="4">4. Sınıf</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="slotCourseName">Ders Adı</label>
+                        <input type="text" id="slotCourseName" class="form-control" placeholder="Örn: Algoritmalar ve Programlama I" required>
+                    </div>
+
+                    <!-- Öğretim Görevlisi -->
+                    <div class="form-group">
+                        <label for="slotInstructor">Öğretim Görevlisi (Hoca)</label>
+                        <select id="slotInstructor" class="form-control" required>
+                            <option value="">-- Öğretim Görevlisi Seçiniz --</option>
+                        </select>
+                    </div>
+
+                    <!-- Derslik Seçimi (Önceden Yüklü Listeden) -->
+                    <div class="form-group">
+                        <label for="slotClassroom">Derslik (Kampüs Sınıfları)</label>
+                        <select id="slotClassroom" class="form-control" required>
+                            <option value="">-- Derslik Seçiniz --</option>
+                        </select>
+                    </div>
+
+                    <!-- Kart Rengi -->
+                    <div class="form-group">
+                        <label for="slotColorTag">Program Kartı Vurgu Rengi</label>
+                        <select id="slotColorTag" class="form-control">
+                            <option value="#7B1123">Bordo (29 Mayıs Kurumsal)</option>
+                            <option value="#102A43">Lacivert</option>
+                            <option value="#0E7C7B">Zümrüt Yeşili</option>
+                            <option value="#0B69A3">Mavi</option>
+                            <option value="#B07D02">Altın / Amber</option>
+                            <option value="#6B3074">Mürdüm Moru</option>
+                            <option value="#2D6A4F">Orman Yeşili</option>
+                        </select>
+                    </div>
+
+                    <!-- ÇAKIŞMA UYARI KUTUSU (CONFLICT ALERT BOX) -->
+                    <div class="conflict-box" id="conflictAlertBox">
+                        <div class="conflict-header">
+                            <span style="font-size: 1.3rem;">⚠️</span>
+                            <span>DİKKAT: DERSLİK VEYA HOCA ÇAKIŞMASI TESPİT EDİLDİ!</span>
+                        </div>
+                        <div class="conflict-desc" id="conflictAlertDesc">
+                            Bu derslik seçilen gün ve saatte doludur.
+                        </div>
+                        <div class="conflict-details" id="conflictAlertDetails">
+                            <!-- Çakışan bölüm, ders ve hoca bilgisi buraya gelecek -->
+                        </div>
+                    </div>
+
+                    <!-- BOŞ DERSLİK ÖNERİLERİ -->
+                    <div class="free-rooms-suggest" id="freeRoomsBox">
+                        <h5>💡 Bu Saat Aralığında Müsait Olan Alternatif Derslikler (Tıklayarak Seçebilirsiniz):</h5>
+                        <div class="free-rooms-pills" id="freeRoomsPills"></div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="btnCancelModal">İptal</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveSlot">
+                        💾 Hücreleri Birleştir & Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 1. KOORDİNATÖR KAMPÜS DOLULUK MODALI -->
+    <div class="modal-overlay" id="coordOccupancyModal">
+        <div class="modal-content" style="max-width: 1200px; width: 95%;">
+            <div class="modal-header">
+                <h3>🏢 Kampüs Geneli Derslik Doluluk Durumu</h3>
+                <button type="button" class="modal-close" onclick="document.getElementById('coordOccupancyModal').classList.remove('active');">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <p style="font-size: 0.88rem; color: var(--text-muted);">
+                        Aşağıdaki çizelgeden tüm sınıfların hangi gün ve saatte hangi bölüm tarafından rezerve edildiğini inceleyebilirsiniz.
+                    </p>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <select id="coordMatrixDay" class="form-control" style="width: 140px;">
+                            <option value="Pazartesi">Pazartesi</option>
+                            <option value="Salı">Salı</option>
+                            <option value="Çarşamba">Çarşamba</option>
+                            <option value="Perşembe">Perşembe</option>
+                            <option value="Cuma">Cuma</option>
+                            <option value="Cumartesi">Cumartesi</option>
+                        </select>
+                        <select id="coordMatrixBuilding" class="form-control" style="width: 140px;">
+                            <option value="">Tüm Binalar</option>
+                            <option value="A Blok">A Blok</option>
+                            <option value="B Blok">B Blok</option>
+                            <option value="C Blok">C Blok</option>
+                            <option value="Rektörlük Binası">Rektörlük</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="coordOccupancyContainer" class="grid-wrapper" style="border: 1px solid var(--surface-border); max-height: 520px; overflow-y: auto;">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('coordOccupancyModal').classList.remove('active');">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. BÖLÜM DERS VE HOCA HAVUZU MODALI -->
+    <div class="modal-overlay" id="poolModal">
+        <div class="modal-content" style="max-width: 900px; width: 92%;">
+            <div class="modal-header">
+                <h3>📚 Bölüm Ders ve Hoca Havuzu</h3>
+                <button type="button" class="modal-close" onclick="document.getElementById('poolModal').classList.remove('active');">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Alt Sekmeler -->
+                <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--surface-border); margin-bottom: 1.25rem;">
+                    <button type="button" class="admin-nav-btn active" id="tabBtnCourses" onclick="window.app.switchPoolTab('courses')">
+                        📖 Bölüm Dersleri (<span id="deptCourseCount">0</span>)
+                    </button>
+                    <button type="button" class="admin-nav-btn" id="tabBtnInstructors" onclick="window.app.switchPoolTab('instructors')">
+                        👨‍🏫 Bölüm Hocaları (<span id="deptInstCount">0</span>)
+                    </button>
+                </div>
+
+                <!-- DERSLER HAVUZU -->
+                <div id="poolSectionCourses">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="font-size: 1rem; color: var(--navy);">Bölümünüze Tanımlı Dersler</h4>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="window.app.openAddCourseForm()">
+                            ➕ Yeni Ders Ekle
+                        </button>
+                    </div>
+
+                    <!-- Hızlı Ders Ekleme Formu (Gizli/Görünür) -->
+                    <div id="courseAddFormContainer" style="display: none; background: var(--surface-alt); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; border: 1px solid var(--surface-border);">
+                        <h5 style="margin-bottom: 0.75rem; color: var(--primary);">Yeni Ders Tanımla</h5>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ders Kodu</label>
+                                <input type="text" id="newPoolCourseCode" class="form-control" placeholder="Örn: CENG202" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Sınıf Seviyesi</label>
+                                <select id="newPoolCourseGrade" class="form-control">
+                                    <option value="1">1. Sınıf</option>
+                                    <option value="2">2. Sınıf</option>
+                                    <option value="3">3. Sınıf</option>
+                                    <option value="4">4. Sınıf</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <label>Ders Adı</label>
+                            <input type="text" id="newPoolCourseName" class="form-control" placeholder="Örn: Nesne Yönelimli Programlama" required>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem;">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('courseAddFormContainer').style.display='none';">İptal</button>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="window.app.saveNewCourse()">💾 Dersi Kaydet</button>
+                        </div>
+                    </div>
+
+                    <div style="max-height: 380px; overflow-y: auto;">
+                        <table class="excel-schedule-table" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Ders Kodu</th>
+                                    <th>Ders Adı</th>
+                                    <th style="width: 100px;">Sınıf</th>
+                                    <th style="width: 100px;">Haftalık Saat</th>
+                                    <th style="width: 90px; text-align: right;">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poolCoursesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- HOCALAR HAVUZU -->
+                <div id="poolSectionInstructors" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="font-size: 1rem; color: var(--navy);">Bölüm Öğretim Elemanları</h4>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="window.app.openAddInstructorForm()">
+                            ➕ Yeni Hoca Ekle
+                        </button>
+                    </div>
+
+                    <!-- Hızlı Hoca Ekleme Formu -->
+                    <div id="instAddFormContainer" style="display: none; background: var(--surface-alt); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; border: 1px solid var(--surface-border);">
+                        <h5 style="margin-bottom: 0.75rem; color: var(--primary);">Yeni Öğretim Elemanı Tanımla</h5>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Akademik Unvan</label>
+                                <select id="newPoolInstTitle" class="form-control">
+                                    <option value="Prof. Dr.">Prof. Dr.</option>
+                                    <option value="Doç. Dr.">Doç. Dr.</option>
+                                    <option value="Dr. Öğr. Üyesi">Dr. Öğr. Üyesi</option>
+                                    <option value="Öğr. Gör.">Öğr. Gör.</option>
+                                    <option value="Arş. Gör.">Arş. Gör.</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Ad Soyad</label>
+                                <input type="text" id="newPoolInstName" class="form-control" placeholder="Örn: Canan Yıldız" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <label>Kurumsal E-Posta</label>
+                            <input type="email" id="newPoolInstEmail" class="form-control" placeholder="canan@29mayis.edu.tr" required>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem;">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('instAddFormContainer').style.display='none';">İptal</button>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="window.app.saveNewInstructor()">💾 Hocayı Kaydet</button>
+                        </div>
+                    </div>
+
+                    <div style="max-height: 380px; overflow-y: auto;">
+                        <table class="excel-schedule-table" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 140px;">Unvan</th>
+                                    <th>Ad Soyad</th>
+                                    <th>Kurumsal E-Posta</th>
+                                    <th style="width: 90px; text-align: right;">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poolInstructorsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('poolModal').classList.remove('active');">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. HOCALARA PROGRAM GÖNDERME MODALI -->
+    <div class="modal-overlay" id="sendScheduleModal">
+        <div class="modal-content" style="max-width: 620px;">
+            <div class="modal-header">
+                <h3>✉️ Bölüm Ders Programını E-Posta ile Paylaş</h3>
+                <button type="button" class="modal-close" onclick="document.getElementById('sendScheduleModal').classList.remove('active');">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.88rem; color: var(--text-muted);">
+                    Haftalık oluşturulan ders ve derslik programını bölüm hocalarının kurumsal e-postalarına (@29mayis.edu.tr) gönderebilirsiniz.
+                </p>
+
+                <div class="form-group" style="margin-top: 0.75rem;">
+                    <label for="sendTargetSelect">Gönderim Türü / Hedef</label>
+                    <select id="sendTargetSelect" class="form-control">
+                        <option value="all">📢 Tüm Bölüm Hocalarına Toplu Gönder (Herkesin Kendi Programı)</option>
+                    </select>
+                </div>
+
+                <!-- Önizleme Kutusu -->
+                <div style="background: var(--surface-alt); border: 1px solid var(--surface-border); border-radius: var(--radius-md); padding: 1rem; margin-top: 0.75rem;">
+                    <h5 style="color: var(--navy); margin-bottom: 0.5rem;" id="sendPreviewTitle">Önizleme: Tüm Bölüm Hocaları</h5>
+                    <div id="sendPreviewContent" style="font-size: 0.84rem; max-height: 220px; overflow-y: auto; color: var(--text-main); line-height: 1.6;">
+                        <!-- JS ile doldurulacak -->
+                    </div>
+                </div>
+
+                <div id="sendSuccessBox" style="display: none; background: #ECFDF5; border: 1px solid #6EE7B7; color: #065F46; padding: 0.85rem; border-radius: var(--radius-md); font-size: 0.85rem; margin-top: 0.75rem;">
+                    <!-- JS bildirim -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('sendScheduleModal').classList.remove('active');">Kapat</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnConfirmSendSchedule" onclick="window.app.dispatchScheduleEmail()">
+                    🚀 Programı E-Posta Olarak Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bildirim Konteyneri -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="js/mock-data.js"></script>
+    <script src="js/conflict-checker.js"></script>
+    <script src="js/schedule-grid.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

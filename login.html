@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap | İstanbul 29 Mayıs Üniversitesi Ders & Derslik Sistemi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #102A43 0%, #0B1D2D 60%, #7B1123 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 520px;
+            overflow: hidden;
+            animation: slideUp 0.35s ease-out;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #540B17 100%);
+            color: white;
+            padding: 2.2rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            background: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.85rem;
+            border: 3px solid var(--gold);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .login-header h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.25rem;
+        }
+
+        .login-header p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+
+        .login-body {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .demo-box {
+            background: var(--surface-alt);
+            border: 1px dashed var(--surface-border-strong);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+        }
+
+        .demo-box h4 {
+            font-size: 0.8rem;
+            color: var(--navy);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .demo-btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .demo-chip {
+            background: white;
+            border: 1px solid var(--surface-border);
+            padding: 0.45rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.76rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .demo-chip:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .demo-chip strong {
+            color: var(--navy);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo">29M</div>
+            <h2>İSTANBUL 29 MAYIS ÜNİVERSİTESİ</h2>
+            <p>Haftalık Ders, Derslik ve Hoca Eşleştirme Sistemi</p>
+        </div>
+
+        <div class="login-body">
+            <form id="loginForm" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                    <label for="loginUsername">Kullanıcı Adı</label>
+                    <input type="text" id="loginUsername" class="form-control" placeholder="Örn: ceng_baskan veya admin" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="loginPassword">Şifre</label>
+                        <a href="javascript:void(0)" onclick="openForgotPasswordModal()" style="font-size: 0.78rem; color: var(--primary); text-decoration: none; font-weight: 600;">
+                            🔑 Şifremi Unuttum?
+                        </a>
+                    </div>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Şifrenizi giriniz" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginFaculty">Fakülte (İsteğe Bağlı Seçim)</label>
+                    <select id="loginFaculty" class="form-control">
+                        <option value="">-- Kullanıcı Hesabımdan Otomatik Algıla --</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="deptGroup" style="display: none;">
+                    <label for="loginDepartment">Bölüm</label>
+                    <select id="loginDepartment" class="form-control">
+                        <option value="">-- Bölüm Seçiniz --</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="padding: 0.75rem; font-size: 1rem; margin-top: 0.5rem;" id="btnLoginSubmit">
+                    🔑 Sisteme Giriş Yap
+                </button>
+            </form>
+
+            <!-- ŞİFREMİ UNUTTUM MODALI -->
+            <div class="modal-overlay" id="forgotModal">
+                <div class="modal-content" style="max-width: 440px;">
+                    <div class="modal-header">
+                        <h3>🔑 Şifre Sıfırlama İsteği</h3>
+                        <button type="button" class="modal-close" onclick="document.getElementById('forgotModal').classList.remove('active');">&times;</button>
+                    </div>
+                    <form id="forgotForm">
+                        <div class="modal-body">
+                            <p style="font-size: 0.85rem; color: var(--text-muted);">
+                                Kurumsal kullanıcı adınızı veya kayıtlı <strong>@29mayis.edu.tr</strong> e-posta adresinizi giriniz. Şifre sıfırlama bağlantısı e-postanıza gönderilecektir.
+                            </p>
+                            <div class="form-group" style="margin-top: 0.5rem;">
+                                <label for="forgotIdentifier">Kullanıcı Adı veya E-Posta</label>
+                                <input type="text" id="forgotIdentifier" class="form-control" placeholder="Örn: ceng@29mayis.edu.tr veya ceng_baskan" required>
+                            </div>
+                            <div id="forgotResult" style="display: none; padding: 0.85rem; border-radius: var(--radius-md); font-size: 0.84rem; margin-top: 0.5rem;"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('forgotModal').classList.remove('active');">Kapat</button>
+                            <button type="submit" class="btn btn-primary btn-sm" id="btnSendResetLink">📨 Sıfırlama Bağlantısı Gönder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="demo-box">
+                <h4>⚡ Hızlı Demo Girişi (Tek Tıkla Deneyin)</h4>
+                <div class="demo-btn-grid">
+                    <button type="button" class="demo-chip" onclick="quickLogin('ceng_baskan', '123456')">
+                        <strong>💻 Bilgisayar Müh.</strong>
+                        <span>Mühendislik Fakültesi</span>
+                    </button>
+                    <button type="button" class="demo-chip" onclick="quickLogin('ilah_baskan', '123456')">
+                        <strong>🕌 İlahiyat Fakültesi</strong>
+                        <span>İlahiyat Programı</span>
+                    </button>
+                    <button type="button" class="demo-chip" onclick="quickLogin('iibf_baskan', '123456')">
+                        <strong>📊 İktisat Bölümü</strong>
+                        <span>İİBF Fakültesi</span>
+                    </button>
+                    <button type="button" class="demo-chip" onclick="quickLogin('admin', '123456')">
+                        <strong>🛡️ Sistem Yöneticisi</strong>
+                        <span>Tam Admin Yetkisi</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/mock-data.js"></script>
+    <script>
+        let allFaculties = [];
+        let allDepartments = [];
+
+        async function initLoginForm() {
+            const res = await apiRequest('get_initial_data');
+            if (res && res.success && res.data) {
+                allFaculties = res.data.faculties || [];
+                allDepartments = res.data.departments || [];
+
+                const facSelect = document.getElementById('loginFaculty');
+                allFaculties.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.id;
+                    opt.textContent = f.name;
+                    facSelect.appendChild(opt);
+                });
+
+                facSelect.addEventListener('change', () => {
+                    const fId = facSelect.value;
+                    const deptGroup = document.getElementById('deptGroup');
+                    const deptSelect = document.getElementById('loginDepartment');
+
+                    if (fId) {
+                        deptGroup.style.display = 'flex';
+                        deptSelect.innerHTML = '<option value="">-- Bölüm Seçiniz --</option>';
+                        const depts = allDepartments.filter(d => d.faculty_id == fId);
+                        depts.forEach(d => {
+                            const opt = document.createElement('option');
+                            opt.value = d.id;
+                            opt.textContent = d.name;
+                            deptSelect.appendChild(opt);
+                        });
+                    } else {
+                        deptGroup.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        async function quickLogin(username, password) {
+            document.getElementById('loginUsername').value = username;
+            document.getElementById('loginPassword').value = password;
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const chosenDeptId = document.getElementById('loginDepartment').value;
+
+            const submitBtn = document.getElementById('btnLoginSubmit');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Giriş Yapılıyor...';
+
+            const res = await apiRequest('login', 'POST', { username, password });
+
+            if (res && res.success && res.data && res.data.user) {
+                let user = res.data.user;
+
+                // Eger kullanici arayuzden ozel bolum sectiyse onu ata
+                if (chosenDeptId) {
+                    user.department_id = parseInt(chosenDeptId);
+                    const dObj = allDepartments.find(d => d.id == chosenDeptId);
+                    if (dObj) {
+                        user.department_name = dObj.name;
+                        user.faculty_name = dObj.faculty_name;
+                    }
+                }
+
+                sessionStorage.setItem('29m_user', JSON.stringify(user));
+
+                if (user.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = `index.html?dept=${user.department_id || 1}`;
+                }
+            } else {
+                alert(res ? res.message : 'Giriş başarısız. Kullanıcı adı veya şifre hatalı.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🔑 Sisteme Giriş Yap';
+            }
+        });
+
+        function openForgotPasswordModal() {
+            document.getElementById('forgotResult').style.display = 'none';
+            document.getElementById('forgotIdentifier').value = '';
+            document.getElementById('forgotModal').classList.add('active');
+        }
+
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ident = document.getElementById('forgotIdentifier').value.trim();
+            const resBox = document.getElementById('forgotResult');
+            const submitBtn = document.getElementById('btnSendResetLink');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Gönderiliyor...';
+
+            const res = await apiRequest('forgot_password', 'POST', { identifier: ident });
+
+            if (res && res.success && res.data) {
+                resBox.style.display = 'block';
+                resBox.style.background = '#ECFDF5';
+                resBox.style.color = '#065F46';
+                resBox.style.border = '1px solid #A7F3D0';
+                resBox.innerHTML = `
+                    <strong>✅ Sıfırlama E-Postası Gönderildi:</strong><br>
+                    ${res.data.message}<br><br>
+                    <a href="${res.data.reset_link}" style="display:inline-block;background:#059669;color:white;padding:0.4rem 0.8rem;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.8rem;">
+                        🔗 Sıfırlama Sayfasını Aç (Demo)
+                    </a>
+                `;
+            } else {
+                resBox.style.display = 'block';
+                resBox.style.background = '#FEF2F2';
+                resBox.style.color = '#991B1B';
+                resBox.style.border = '1px solid #FECACA';
+                resBox.textContent = res ? res.message : 'Kullanıcı bulunamadı.';
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📨 Sıfırlama Bağlantısı Gönder';
+        });
+
+        window.addEventListener('DOMContentLoaded', initLoginForm);
+    </script>
+</body>
+</html>
