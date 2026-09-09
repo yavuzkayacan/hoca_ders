@@ -1,14 +1,18 @@
 @echo off
 chcp 65001 >nul
-title GitHub Yükleme Aracı - 29 Mayıs Üniversitesi
+title GitHub Yukleme Araci - 29 Mayis Universitesi
 cls
 echo ================================================================
-echo   İSTANBUL 29 MAYIS ÜNİVERSİTESİ - GITHUB YÜKLEME ARACI
+echo   ISTANBUL 29 MAYIS UNIVERSITESI - GITHUB YUKLEME ARACI
 echo   Hedef Depo: https://github.com/yavuzkayacan/hoca_ders
 echo ================================================================
 echo.
 
-set GIT="C:\Users\yekayacan\AppData\Local\Microsoft\WinGet\Packages\Git.MinGit_Microsoft.Winget.Source_8wekyb3d8bbwe\cmd\git.exe"
+set GIT=git
+where git >nul 2>nul
+if errorlevel 1 (
+    set GIT="C:\Users\yekayacan\AppData\Local\Microsoft\WinGet\Packages\Git.MinGit_Microsoft.Winget.Source_8wekyb3d8bbwe\cmd\git.exe"
+)
 
 echo [1/2] Proje dosyalari hazirlaniyor...
 %GIT% add .
@@ -16,45 +20,66 @@ echo [1/2] Proje dosyalari hazirlaniyor...
 
 echo.
 echo ================================================================
-echo   GitHub'a aktarmak için bir yöntem seçiniz:
+echo   GitHub'a aktarmak icin bir yontem seciniz:
 echo ================================================================
-echo   [1] Tarayici ile Yetkilendirerek Yükle (Enter'a basabilirsiniz)
-echo   [2] GitHub Personal Access Token (PAT) ile Yükle
-echo   [3] Çikis
+echo   [1] Tarayici / Normal Giris ile Yukle
+echo   [2] GitHub Personal Access Token (PAT) ile Yukle
+echo   [3] Cikis
 echo ================================================================
 echo.
-set /p SECIM="Seçiminiz [Varsayilan: 1]: "
+set /p SECIM="Seciminiz [1 veya 2]: "
 
-if "%SECIM%"=="" set SECIM=1
+if "%SECIM%"=="2" goto YONTEM_TOKEN
+if "%SECIM%"=="3" exit /b 0
 
-if "%SECIM%"=="1" (
+:YONTEM_NORMAL
+echo.
+echo [2/2] GitHub'a aktariliyor...
+%GIT% push -u origin main --force
+if errorlevel 1 (
     echo.
-    echo [2/2] GitHub'a aktariliyor...
-    echo (Eger tarayici veya yetkilendirme penceresi acilirsa lutfen onaylayin)
-    %GIT% push -u origin main --force
-    goto SONUC
+    echo ================================================================
+    echo   [HATA] Yukleme basarisiz oldu!
+    echo   Lutfen scripti tekrar calistirip [2] secenegini secin.
+    echo ================================================================
+    echo.
+    pause
+    exit /b 1
 )
+goto SONUC
 
-if "%SECIM%"=="2" (
-    echo.
-    echo Token olusturmak icin: https://github.com/settings/tokens
-    set /p GHTOKEN="GitHub Access Token'inizi yapistirin: "
-    if "%GHTOKEN%"=="" (
-        echo Hata: Token bos birakilamaz!
-        goto SONUC
-    )
-    echo.
-    echo [2/2] Token ile GitHub'a yukleniyor...
-    %GIT% push -f https://%GHTOKEN%@github.com/yavuzkayacan/hoca_ders.git main
-    goto SONUC
+:YONTEM_TOKEN
+echo.
+echo Token almak icin tarayicida şu adrese gidin:
+echo https://github.com/settings/tokens
+echo.
+set /p GHTOKEN="GitHub Access Token'inizi yapistirin: "
+if "%GHTOKEN%"=="" (
+    echo Hata: Token bos birakilamaz!
+    pause
+    exit /b 1
 )
+echo.
+echo [2/2] Token ile GitHub'a yukleniyor...
+%GIT% push -f https://%GHTOKEN%@github.com/yavuzkayacan/hoca_ders.git main
+if errorlevel 1 (
+    echo.
+    echo ================================================================
+    echo   [HATA] Token ile yukleme de basarisiz oldu!
+    echo   Lutfen Token'inizin dogru oldugunu kontrol edin.
+    echo ================================================================
+    echo.
+    pause
+    exit /b 1
+)
+goto SONUC
 
 :SONUC
 echo.
 echo ================================================================
-echo   İşlem tamamlandı!
-echo   Deponuzu kontrol etmek için:
-echo   https://github.com/yavuzkayacan/hoca_ders
+echo   TEBRIKLER! Dosyalar basariyla GitHub'a aktarildi.
+echo   Deponuz: https://github.com/yavuzkayacan/hoca_ders
+echo   Siteniz: https://yavuzkayacan.github.io/hoca_ders/
 echo ================================================================
 echo.
 pause
