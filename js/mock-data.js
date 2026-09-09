@@ -167,13 +167,27 @@ function handleLocalStorageApi(action, method, body) {
         localStorage.setItem('29m_instructors', JSON.stringify(instructors));
     }
 
-    if (!slots) {
+    if (!slots || slots.length === 0) {
         slots = [
-            { id: 1, department_id: 1, grade_level: 1, course_name: 'Algoritmalar ve Programlama I', course_code: 'CENG101', instructor_name: 'Prof. Dr. Mustafa Tahsin', classroom_id: 7, classroom_code: 'B-Lab-1', day_name: 'Pazartesi', start_hour_index: 1, end_hour_index: 3, start_time: '09:00', end_time: '11:50', color_tag: '#102A43' },
-            { id: 2, department_id: 1, grade_level: 1, course_name: 'Genel Matematik I', course_code: 'MATH101', instructor_name: 'Dr. Öğr. Üyesi Mehmet Kaya', classroom_id: 4, classroom_code: 'A-Amfi-1', day_name: 'Salı', start_hour_index: 0, end_hour_index: 2, start_time: '08:00', end_time: '10:50', color_tag: '#7B1123' },
-            { id: 3, department_id: 6, grade_level: 1, course_name: 'Kuran Okuma ve Tecvid I', course_code: 'ILAH101', instructor_name: 'Prof. Dr. Ali Rıza Aydın', classroom_id: 6, classroom_code: 'B-201', day_name: 'Çarşamba', start_hour_index: 1, end_hour_index: 3, start_time: '09:00', end_time: '11:50', color_tag: '#0E7C7B' }
+            { id: 1, department_id: 1, department_name: 'Bilgisayar Mühendisliği', grade_level: 1, course_name: 'Algoritmalar ve Programlama I', course_code: 'CENG101', instructor_name: 'Prof. Dr. Mustafa Tahsin', classroom_id: 7, classroom_code: 'B-Lab-1', day_name: 'Pazartesi', start_hour_index: 1, end_hour_index: 3, start_time: '09:00', end_time: '11:50', color_tag: '#102A43' },
+            { id: 2, department_id: 1, department_name: 'Bilgisayar Mühendisliği', grade_level: 1, course_name: 'Genel Matematik I', course_code: 'MATH101', instructor_name: 'Dr. Öğr. Üyesi Mehmet Kaya', classroom_id: 4, classroom_code: 'A-Amfi-1', day_name: 'Salı', start_hour_index: 0, end_hour_index: 2, start_time: '08:00', end_time: '10:50', color_tag: '#7B1123' },
+            { id: 3, department_id: 6, department_name: 'İlahiyat Programı', grade_level: 1, course_name: 'Kuran Okuma ve Tecvid I', course_code: 'ILAH101', instructor_name: 'Prof. Dr. Ali Rıza Aydın', classroom_id: 6, classroom_code: 'B-201', day_name: 'Çarşamba', start_hour_index: 1, end_hour_index: 3, start_time: '09:00', end_time: '11:50', color_tag: '#0E7C7B' },
+            { id: 4, department_id: 3, department_name: 'İktisat', grade_level: 1, course_name: 'İktisada Giriş I', course_code: 'ECON101', instructor_name: 'Prof. Dr. Zeynep Aksoy', classroom_id: 1, classroom_code: 'A-101', day_name: 'Perşembe', start_hour_index: 2, end_hour_index: 4, start_time: '10:00', end_time: '12:50', color_tag: '#B07D02' }
         ];
         localStorage.setItem('29m_slots', JSON.stringify(slots));
+    } else {
+        // Mevcut kayitlarda department_name eksikse tamamla
+        let updated = false;
+        slots.forEach(s => {
+            if (!s.department_name) {
+                const dep = defaultDepartments.find(d => d.id === s.department_id);
+                s.department_name = dep ? dep.name : '29 Mayıs Üniversitesi';
+                updated = true;
+            }
+        });
+        if (updated) {
+            localStorage.setItem('29m_slots', JSON.stringify(slots));
+        }
     }
 
     if (!users) {

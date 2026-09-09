@@ -169,6 +169,8 @@ class UniversityApp {
 
     initGrid() {
         this.grid = new ScheduleGrid('scheduleGridWrapper');
+        // İskelet tabloyu sayfa yüklenir yüklenmez anında çiz
+        this.grid.render([]);
 
         // Hucre secildiginde tetiklenir
         this.grid.onSelectionChange = (range) => {
@@ -444,12 +446,12 @@ class UniversityApp {
     // =============================================================
     async openCoordinatorOccupancy() {
         document.getElementById('coordOccupancyModal').classList.add('active');
+        // Modal açılır açılmaz beklemeden hemen çiz
+        this.renderCoordOccupancyMatrix();
         await this.loadCoordOccupancyMatrix();
     }
 
     async loadCoordOccupancyMatrix() {
-        const container = document.getElementById('coordOccupancyContainer');
-        container.innerHTML = '<div style="padding: 2rem; text-align:center;">Derslik doluluk matrisi yükleniyor...</div>';
         const res = await apiRequest('get_all_occupancy');
         if (res && res.success && res.data) {
             this.allOccupancySlots = res.data.slots || [];
@@ -459,10 +461,13 @@ class UniversityApp {
 
     renderCoordOccupancyMatrix() {
         const container = document.getElementById('coordOccupancyContainer');
-        const day = document.getElementById('coordMatrixDay').value;
-        const bld = document.getElementById('coordMatrixBuilding').value;
+        if (!container) return;
+        const dayEl = document.getElementById('coordMatrixDay');
+        const bldEl = document.getElementById('coordMatrixBuilding');
+        const day = dayEl ? dayEl.value : 'Pazartesi';
+        const bld = bldEl ? bldEl.value : '';
 
-        let rooms = this.initialData.classrooms;
+        let rooms = (this.initialData && this.initialData.classrooms) ? this.initialData.classrooms : [];
         if (bld) rooms = rooms.filter(r => r.building === bld);
 
         let html = `
@@ -495,11 +500,13 @@ class UniversityApp {
                 );
 
                 if (match) {
+                    const deptObj = (this.initialData && this.initialData.departments) ? this.initialData.departments.find(d => d.id == match.department_id) : null;
+                    const deptTitle = match.department_name || (deptObj ? deptObj.name : '29 Mayıs Üniversitesi');
                     html += `
                         <td style="background: rgba(123, 17, 35, 0.08); border: 1px solid var(--surface-border); padding: 0.35rem; vertical-align: top;">
                             <div style="border-left: 3px solid #7B1123; padding-left: 0.35rem; font-size: 0.72rem;">
                                 <strong style="color: #7B1123; display:block;">${match.course_code || match.course_name}</strong>
-                                <span style="font-size: 0.68rem; color: var(--navy); display:block;">${match.department_name}</span>
+                                <span style="font-size: 0.68rem; color: var(--navy); display:block;">${deptTitle}</span>
                                 <span style="font-size: 0.65rem; color: var(--text-muted); display:block;">👨‍🏫 ${match.instructor_name}</span>
                             </div>
                         </td>

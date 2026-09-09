@@ -334,11 +334,13 @@ class AdminPanel {
                 );
 
                 if (match) {
+                    const deptObj = this.departments.find(d => d.id == match.department_id);
+                    const deptName = match.department_name || (deptObj ? deptObj.name : '29 Mayıs Üniversitesi');
                     html += `
                         <td style="background: rgba(123, 17, 35, 0.08); border: 1px solid var(--surface-border); padding: 0.35rem; vertical-align: top;">
                             <div style="border-left: 3px solid #7B1123; padding-left: 0.35rem; font-size: 0.75rem;">
                                 <strong style="color: #7B1123; display:block;">${this.escape(match.course_code || match.course_name)}</strong>
-                                <span style="font-size: 0.7rem; color: var(--navy); display:block;">${this.escape(match.department_name)}</span>
+                                <span style="font-size: 0.7rem; color: var(--navy); display:block;">${this.escape(deptName)}</span>
                                 <span style="font-size: 0.68rem; color: var(--text-muted); display:block;">👨‍🏫 ${this.escape(match.instructor_name)}</span>
                             </div>
                         </td>
