@@ -54,7 +54,20 @@ class AdminPanel {
         if (res && res.success && res.data) {
             this.faculties = res.data.faculties || [];
             this.departments = res.data.departments || [];
+            this.classrooms = res.data.classrooms || [];
             this.populateDropdowns();
+        }
+    }
+
+    populateMatrixBuildingFilter() {
+        const bldSelect = document.getElementById('matrixBuildingFilter');
+        if (!bldSelect || !this.classrooms || this.classrooms.length === 0) return;
+        const currentVal = bldSelect.value;
+        const buildings = [...new Set(this.classrooms.map(c => c.building).filter(Boolean))];
+        bldSelect.innerHTML = '<option value="">Tüm Binalar</option>' + 
+            buildings.map(b => `<option value="${this.escape(b)}">${this.escape(b)}</option>`).join('');
+        if (buildings.includes(currentVal)) {
+            bldSelect.value = currentVal;
         }
     }
 
@@ -113,6 +126,9 @@ class AdminPanel {
                 });
             }
         });
+
+        // Matris bina filtresini güncelle
+        this.populateMatrixBuildingFilter();
     }
 
     initTabs() {
@@ -231,6 +247,7 @@ class AdminPanel {
         if (res && res.success && res.data) {
             this.classrooms = res.data.classrooms || [];
             this.renderClassroomsTable();
+            this.populateMatrixBuildingFilter();
         }
     }
 
@@ -283,22 +300,36 @@ class AdminPanel {
         const matrixContainer = document.getElementById('occupancyMatrixContainer');
         if (!matrixContainer) return;
 
-        matrixContainer.innerHTML = '<div style="padding: 2rem; text-align:center;">Derslik doluluk matrisi yükleniyor...</div>';
+        if (!this.classrooms || this.classrooms.length === 0) {
+            await this.loadClassrooms();
+        }
+
+        matrixContainer.innerHTML = '<div style="padding: 2.5rem; text-align:center; color:var(--text-muted);">Derslik doluluk matrisi yükleniyor...</div>';
 
         const res = await apiRequest('get_all_occupancy');
         if (res && res.success && res.data) {
             this.occupancySlots = res.data.slots || [];
+            if (res.data.classrooms && (!this.classrooms || this.classrooms.length === 0)) {
+                this.classrooms = res.data.classrooms;
+            }
+            this.populateMatrixBuildingFilter();
+            this.renderOccupancyMatrix();
+        } else {
             this.renderOccupancyMatrix();
         }
     }
 
     renderOccupancyMatrix() {
         const matrixContainer = document.getElementById('occupancyMatrixContainer');
-        const dayFilter = document.getElementById('matrixDayFilter').value;
-        const buildingFilter = document.getElementById('matrixBuildingFilter').value;
+        if (!matrixContainer) return;
+
+        const dayEl = document.getElementById('matrixDayFilter');
+        const dayFilter = dayEl ? dayEl.value : 'Pazartesi';
+        const bldEl = document.getElementById('matrixBuildingFilter');
+        const buildingFilter = bldEl ? bldEl.value : '';
 
         // Derslikleri filtrele
-        let filteredRooms = this.classrooms;
+        let filteredRooms = this.classrooms || [];
         if (buildingFilter) {
             filteredRooms = filteredRooms.filter(r => r.building === buildingFilter);
         }
@@ -308,54 +339,64 @@ class AdminPanel {
                 <table class="excel-schedule-table">
                     <thead>
                         <tr>
-                            <th style="width: 140px; position: sticky; left:0; z-index: 25; background: #071520;">Derslik / Saat</th>
+                            <th style="width: 150px; position: sticky; left:0; z-index: 25; background: #071520;">Derslik / Saat</th>
                             ${TIME_SLOTS.map(t => `<th style="font-size: 0.8rem;">${t.start}<br><small style="color:var(--gold);">${t.end}</small></th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
         `;
 
-        filteredRooms.forEach(room => {
-            html += `<tr>`;
+        if (!filteredRooms || filteredRooms.length === 0) {
             html += `
-                <td class="time-cell" style="text-align: left; padding: 0.5rem 0.75rem;">
-                    <strong>${this.escape(room.code)}</strong>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">${this.escape(room.building)} (${room.capacity} Kişi)</div>
-                </td>
+                <tr>
+                    <td colspan="${TIME_SLOTS.length + 1}" style="text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 0.95rem;">
+                        ⚠️ Seçilen bina filtresine uygun veya sisteme kayıtlı derslik bulunamadı.
+                    </td>
+                </tr>
             `;
+        } else {
+            filteredRooms.forEach(room => {
+                html += `<tr>`;
+                html += `
+                    <td class="time-cell" style="text-align: left; padding: 0.5rem 0.75rem;">
+                        <strong style="color: var(--navy);">${this.escape(room.code)}</strong>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">${this.escape(room.building)} (${room.capacity} Kişi)</div>
+                    </td>
+                `;
 
-            TIME_SLOTS.forEach(time => {
-                // Bu derslikte bu saatte ders var mi?
-                const match = this.occupancySlots.find(s => 
-                    s.classroom_id == room.id && 
-                    s.day_name === dayFilter && 
-                    s.start_hour_index <= time.index && 
-                    s.end_hour_index >= time.index
-                );
+                TIME_SLOTS.forEach(time => {
+                    // Bu derslikte bu saatte ders var mi?
+                    const match = (this.occupancySlots || []).find(s => 
+                        s.classroom_id == room.id && 
+                        s.day_name === dayFilter && 
+                        s.start_hour_index <= time.index && 
+                        s.end_hour_index >= time.index
+                    );
 
-                if (match) {
-                    const deptObj = this.departments.find(d => d.id == match.department_id);
-                    const deptName = match.department_name || (deptObj ? deptObj.name : '29 Mayıs Üniversitesi');
-                    html += `
-                        <td style="background: rgba(123, 17, 35, 0.08); border: 1px solid var(--surface-border); padding: 0.35rem; vertical-align: top;">
-                            <div style="border-left: 3px solid #7B1123; padding-left: 0.35rem; font-size: 0.75rem;">
-                                <strong style="color: #7B1123; display:block;">${this.escape(match.course_code || match.course_name)}</strong>
-                                <span style="font-size: 0.7rem; color: var(--navy); display:block;">${this.escape(deptName)}</span>
-                                <span style="font-size: 0.68rem; color: var(--text-muted); display:block;">👨‍🏫 ${this.escape(match.instructor_name)}</span>
-                            </div>
-                        </td>
-                    `;
-                } else {
-                    html += `
-                        <td style="background: #F0FDF4; border: 1px solid var(--surface-border); text-align: center; color: #15803D; font-size: 0.75rem; font-weight: 600;">
-                            BOŞ
-                        </td>
-                    `;
-                }
+                    if (match) {
+                        const deptObj = (this.departments || []).find(d => d.id == match.department_id);
+                        const deptName = match.department_name || (deptObj ? deptObj.name : '29 Mayıs Üniversitesi');
+                        html += `
+                            <td style="background: rgba(32, 53, 81, 0.08); border: 1px solid var(--surface-border); padding: 0.35rem; vertical-align: top;">
+                                <div style="border-left: 3px solid var(--primary); padding-left: 0.35rem; font-size: 0.75rem;">
+                                    <strong style="color: var(--primary); display:block;">${this.escape(match.course_code || match.course_name)}</strong>
+                                    <span style="font-size: 0.7rem; color: var(--navy); display:block;">${this.escape(deptName)}</span>
+                                    <span style="font-size: 0.68rem; color: var(--text-muted); display:block;">👨‍🏫 ${this.escape(match.instructor_name)}</span>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        html += `
+                            <td style="background: #F0FDF4; border: 1px solid var(--surface-border); text-align: center; color: #15803D; font-size: 0.75rem; font-weight: 600;">
+                                BOŞ
+                            </td>
+                        `;
+                    }
+                });
+
+                html += `</tr>`;
             });
-
-            html += `</tr>`;
-        });
+        }
 
         html += `
                     </tbody>

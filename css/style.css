@@ -1,21 +1,24 @@
 /* 
  * Istanbul 29 Mayis Universitesi - Kurumsal Tasarim Sistemi
- * Renkler: Bordo (#7B1123), Lacivert (#102A43), Altin (#C59B27)
+ * Renkler: Kurumsal Lacivert (#203551), Üniversite Mavisi (#096ea9), Varak Altın (#C59B27)
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
 :root {
-    --primary: #7B1123;         /* 29 Mayis Bordosu */
-    --primary-hover: #630D1B;
-    --primary-light: #FDF2F4;
-    --primary-glow: rgba(123, 17, 35, 0.25);
+    --primary: #203551;         /* 29 Mayıs Resmi Kurumsal Lacivert */
+    --primary-hover: #162539;
+    --primary-light: #EBF3F8;
+    --primary-glow: rgba(32, 53, 81, 0.25);
     
-    --navy: #102A43;            /* Koyu Kurumsal Lacivert */
+    --secondary: #096ea9;       /* 29 Mayıs Canlı Kurumsal Mavi */
+    --secondary-hover: #075685;
+    
+    --navy: #102A43;            /* Koyu Gece Laciverti */
     --navy-light: #243B53;
     --navy-bg: #0B1D2D;
     
-    --gold: #C59B27;            /* Universite Altini */
+    --gold: #C59B27;            /* Üniversite Varak Altını */
     --gold-hover: #A7821E;
     --gold-light: #FEF8E7;
 
@@ -43,7 +46,7 @@
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
     --shadow-lg: 0 10px 25px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
-    --shadow-xl: 0 20px 35px -5px rgba(123, 17, 35, 0.15);
+    --shadow-xl: 0 20px 35px -5px rgba(32, 53, 81, 0.18);
     
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
@@ -66,10 +69,10 @@ body {
 
 /* Header & Top Bar */
 .top-navbar {
-    background: linear-gradient(135deg, var(--primary) 0%, #540B17 100%);
+    background: linear-gradient(135deg, #102A43 0%, #203551 55%, #096ea9 100%);
     color: white;
     padding: 0 2rem;
-    height: 70px;
+    height: 72px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -87,9 +90,21 @@ body {
     color: white;
 }
 
+.nav-logo-img {
+    height: 48px;
+    width: 48px;
+    object-fit: contain;
+    background: white;
+    border-radius: 50%;
+    padding: 3px;
+    border: 2px solid var(--gold);
+    box-shadow: var(--shadow-md);
+    display: inline-block;
+}
+
 .nav-logo-icon {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     background: white;
     border-radius: 50%;
     display: flex;

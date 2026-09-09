@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giriş Yap | İstanbul 29 Mayıs Üniversitesi Ders & Derslik Sistemi</title>
+    <link rel="icon" type="image/png" href="https://www.29mayis.edu.tr/public/images/favicon-32x32.png">
     <link rel="stylesheet" href="css/style.css?v=20260909_02">
     <style>
         body {
-            background: linear-gradient(135deg, #102A43 0%, #0B1D2D 60%, #7B1123 100%);
+            background: linear-gradient(135deg, #0B1D2D 0%, #102A43 50%, #203551 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -26,7 +27,7 @@
         }
 
         .login-header {
-            background: linear-gradient(135deg, var(--primary) 0%, #540B17 100%);
+            background: linear-gradient(135deg, #102A43 0%, #203551 60%, #096ea9 100%);
             color: white;
             padding: 2.2rem 2rem;
             text-align: center;
@@ -34,19 +35,23 @@
         }
 
         .login-logo {
-            width: 64px;
-            height: 64px;
+            width: 72px;
+            height: 72px;
             background: white;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: var(--primary);
-            font-size: 1.75rem;
-            font-weight: 800;
             margin-bottom: 0.85rem;
             border: 3px solid var(--gold);
             box-shadow: var(--shadow-lg);
+            padding: 5px;
+        }
+
+        .login-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .login-header h2 {
@@ -122,7 +127,9 @@
 
     <div class="login-card">
         <div class="login-header">
-            <div class="login-logo">29M</div>
+            <div class="login-logo">
+                <img src="https://www.29mayis.edu.tr/public/images/logo/logo.png" alt="İstanbul 29 Mayıs Üniversitesi">
+            </div>
             <h2>İSTANBUL 29 MAYIS ÜNİVERSİTESİ</h2>
             <p>Haftalık Ders, Derslik ve Hoca Eşleştirme Sistemi</p>
         </div>
@@ -204,6 +211,18 @@
                         <strong>📊 İktisat Bölümü</strong>
                         <span>İİBF Fakültesi</span>
                     </button>
+                    <button type="button" class="demo-chip" onclick="quickLogin('hukuk_baskan', '123456')">
+                        <strong>⚖️ Hukuk Fakültesi</strong>
+                        <span>Hukuk Programı</span>
+                    </button>
+                    <button type="button" class="demo-chip" onclick="quickLogin('edeb_baskan', '123456')">
+                        <strong>📜 Edebiyat Fakültesi</strong>
+                        <span>Tarih & Edebiyat</span>
+                    </button>
+                    <button type="button" class="demo-chip" onclick="quickLogin('egtm_baskan', '123456')">
+                        <strong>🎓 Eğitim Fakültesi</strong>
+                        <span>İngilizce Öğrt.</span>
+                    </button>
                     <button type="button" class="demo-chip" onclick="quickLogin('admin', '123456')">
                         <strong>🛡️ Sistem Yöneticisi</strong>
                         <span>Tam Admin Yetkisi</span>
@@ -213,7 +232,7 @@
         </div>
     </div>
 
-    <script src="js/mock-data.js?v=20260909_02"></script>
+    <script src="js/mock-data.js?v=20260909_05"></script>
     <script>
         let allFaculties = [];
         let allDepartments = [];

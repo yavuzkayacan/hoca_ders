@@ -234,7 +234,8 @@ switch ($action) {
             JOIN classrooms c ON s.classroom_id = c.id
             ORDER BY s.day_name, s.start_hour_index
         ");
-        sendResponse(true, ['slots' => $stmt->fetchAll()]);
+        $roomsStmt = $pdo->query("SELECT * FROM classrooms ORDER BY building, code");
+        sendResponse(true, ['slots' => $stmt->fetchAll(), 'classrooms' => $roomsStmt->fetchAll()]);
         break;
 
     // -------------------------------------------------------------
