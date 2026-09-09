@@ -280,9 +280,92 @@
     background: var(--danger-light);
 }
 
+/* Hoca On Izleme Tablosu */
+.inst-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.82rem;
+    min-width: 850px;
+}
+.inst-preview-table th {
+    background: #1B2A4A;
+    color: white;
+    padding: 0.6rem 0.4rem;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid #2C3E50;
+    font-size: 0.85rem;
+}
+.inst-preview-table th.time-col {
+    width: 110px;
+    background: #0F172A;
+}
+.inst-preview-table td {
+    border: 1px solid #E2E8F0;
+    text-align: center;
+    vertical-align: middle;
+}
+.inst-preview-table td.inst-time-cell {
+    background: #F8FAFC;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.4rem 0.2rem;
+}
+.inst-preview-table td.inst-empty-cell {
+    background: #FFFFFF;
+    color: #CBD5E1;
+    font-size: 0.75rem;
+}
+.inst-preview-table td.inst-occupied-cell {
+    background: #FDF4F5;
+    border: 1.5px solid #8B2332;
+    padding: 0.4rem;
+}
+.inst-card {
+    text-align: center;
+}
+.inst-card-code {
+    font-weight: 700;
+    color: #8B2332;
+    font-size: 0.85rem;
+}
+.inst-card-title {
+    font-weight: 600;
+    color: #0F172A;
+    font-size: 0.8rem;
+    margin: 2px 0;
+}
+.inst-card-room {
+    display: inline-block;
+    background: #EFF6FF;
+    color: #1E40AF;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+.inst-card-grade {
+    display: inline-block;
+    background: #F1F5F9;
+    color: #475569;
+    font-size: 0.72rem;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-top: 2px;
+}
+
 /* Cikis veya Yazdirma Modu */
 @media print {
-    .top-navbar, .control-bar, .instruction-banner, .btn, .card-actions {
+    body * {
+        visibility: hidden !important;
+    }
+    #cleanPrintIframe, #cleanPrintIframe * {
+        visibility: visible !important;
+    }
+    .top-navbar, .control-bar, .instruction-banner, .btn, .card-actions, .modal-overlay {
         display: none !important;
     }
     .grid-wrapper {
@@ -297,3 +380,4 @@
         height: 60px;
     }
 }
+

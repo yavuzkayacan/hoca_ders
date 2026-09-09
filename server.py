@@ -612,8 +612,8 @@ class UniversityRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(True, {
                     'count': len(recipients),
                     'recipients': recipients,
-                    'summary': f"{len(recipients)} öğretim görevlisine haftalık ders programı başarıyla iletildi."
-                }, "Program başarıyla gönderildi.")
+                    'summary': f"{len(recipients)} öğretim elemanına kişisel haftalık ders programları (PDF ve Excel .xlsx ekleriyle) kurumsal e-posta adreslerine iletildi."
+                }, "Kişisel ders programları başarıyla gönderildi.")
 
             elif action == 'get_all_occupancy':
                 c.execute("""

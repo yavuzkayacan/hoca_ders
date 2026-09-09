@@ -294,16 +294,21 @@ class UniversityApp {
             });
         }
 
-        // Excel / CSV Disa Aktar Butonu
+        // Excel / XLSX Dışa Aktar Butonu
         const btnExport = document.getElementById('btnExportExcel');
         if (btnExport) {
             btnExport.addEventListener('click', () => this.exportScheduleToExcel());
         }
 
-        // Yazdir Butonu
+        // Yalnızca Program Tablosunu Temiz Yazdır / PDF
         const btnPrint = document.getElementById('btnPrintSchedule');
         if (btnPrint) {
-            btnPrint.addEventListener('click', () => window.print());
+            btnPrint.addEventListener('click', () => {
+                const currentSlots = (this.currentGradeLevel > 0)
+                    ? this.scheduleSlots.filter(s => s.grade_level === this.currentGradeLevel)
+                    : this.scheduleSlots;
+                this.printCleanSchedule(currentSlots);
+            });
         }
 
         // Koordinatör Kampüs Doluluk Modalı
@@ -332,6 +337,45 @@ class UniversityApp {
         const sendTarget = document.getElementById('sendTargetSelect');
         if (sendTarget) {
             sendTarget.addEventListener('change', () => this.updateSendPreview());
+        }
+
+        // Hoca Kişisel Programı Ön İzleme Butonları
+        const btnOpenPreview = document.getElementById('btnOpenInstPreview');
+        if (btnOpenPreview) {
+            btnOpenPreview.addEventListener('click', () => {
+                const val = document.getElementById('sendTargetSelect').value;
+                this.openInstructorPreviewModal(val !== 'all' ? val : null);
+            });
+        }
+
+        const btnOpenPreviewDirect = document.getElementById('btnOpenInstPreviewDirect');
+        if (btnOpenPreviewDirect) {
+            btnOpenPreviewDirect.addEventListener('click', () => {
+                const val = document.getElementById('sendTargetSelect').value;
+                this.openInstructorPreviewModal(val !== 'all' ? val : null);
+            });
+        }
+
+        const previewInstSelect = document.getElementById('previewInstSelect');
+        if (previewInstSelect) {
+            previewInstSelect.addEventListener('change', (e) => {
+                this.renderInstructorPreview(e.target.value);
+            });
+        }
+
+        const btnInstPdf = document.getElementById('btnInstPreviewPdf');
+        if (btnInstPdf) {
+            btnInstPdf.addEventListener('click', () => this.printCurrentPreviewInstructor());
+        }
+
+        const btnInstXlsx = document.getElementById('btnInstPreviewXlsx');
+        if (btnInstXlsx) {
+            btnInstXlsx.addEventListener('click', () => this.exportCurrentPreviewInstructorXlsx());
+        }
+
+        const btnInstSendSingle = document.getElementById('btnInstPreviewSendSingle');
+        if (btnInstSendSingle) {
+            btnInstSendSingle.addEventListener('click', () => this.sendCurrentPreviewInstructorEmail());
         }
     }
 
@@ -410,35 +454,486 @@ class UniversityApp {
         }
     }
 
-    exportScheduleToExcel() {
-        let csvContent = "\uFEFF"; // UTF-8 BOM Turkce karakterler icin
-        csvContent += "Saat / Gün;Pazartesi;Salı;Çarşamba;Perşembe;Cuma;Cumartesi\n";
+    exportScheduleToExcel(isInstructorMode = false, targetInstructor = null) {
+        if (typeof XLSX === 'undefined') {
+            this.showToast('Excel kütüphanesi yüklenemedi. Sayfayı yenileyiniz.', 'danger');
+            return;
+        }
 
-        TIME_SLOTS.forEach(time => {
-            let row = [`"${time.start} - ${time.end}"`];
-            DAYS_OF_WEEK.forEach(day => {
-                const match = this.scheduleSlots.find(s => 
-                    s.day_name === day && 
-                    s.start_hour_index <= time.index && 
-                    s.end_hour_index >= time.index
-                );
-                if (match) {
-                    row.push(`"${match.course_code} - ${match.course_name} (${match.classroom_code} / ${match.instructor_name})"`);
-                } else {
-                    row.push('""');
-                }
-            });
-            csvContent += row.join(';') + '\n';
+        const facultyName = this.currentFaculty ? this.currentFaculty.name : "İlahiyat Fakültesi";
+        const deptName = this.currentDepartment ? this.currentDepartment.name : "Temel İslam Bilimleri";
+        
+        let slots = this.scheduleSlots || [];
+        let subTitle = "2025-2026 Eğitim-Öğretim Yılı Bahar Yarıyılı";
+        let detailTitle = "Tüm Sınıflar Haftalık Ders Programı";
+        let cleanFileName = `${deptName}_Haftalik_Ders_Programi.xlsx`;
+
+        if (isInstructorMode && targetInstructor) {
+            slots = this.scheduleSlots.filter(s => s.instructor_name && s.instructor_name.includes(targetInstructor.name));
+            detailTitle = `Öğretim Elemanı: ${targetInstructor.title || ''} ${targetInstructor.name}`;
+            cleanFileName = `${(targetInstructor.name || 'Hoca').replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ]/g, '_')}_Kisisel_Ders_Programi.xlsx`;
+        } else if (this.currentGradeLevel > 0) {
+            slots = this.scheduleSlots.filter(s => s.grade_level === this.currentGradeLevel);
+            detailTitle = `${this.currentGradeLevel}. Sınıf Haftalık Ders Programı`;
+            cleanFileName = `${deptName}_${this.currentGradeLevel}_Sinif_Ders_Programi.xlsx`;
+        }
+
+        const wb = XLSX.utils.book_new();
+
+        // Üst antet satırları
+        const dateStr = new Date().toLocaleDateString('tr-TR') + ' ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        const wsData = [
+            ["T.C. İSTANBUL 29 MAYIS ÜNİVERSİTESİ", "", "", "", "", "", ""],
+            [`${facultyName} / ${deptName}`, "", "", "", "", "", ""],
+            [`${subTitle} • ${detailTitle}`, "", "", "", "", "", ""],
+            [`Oluşturulma Tarihi: ${dateStr}`, "", "", "", "", "", ""],
+            ["", "", "", "", "", "", ""],
+            ["Saat / Gün", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"]
+        ];
+
+        const merges = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
+        ];
+
+        // Slot haritası ve kapsanan saat hücreleri
+        const slotMap = {};
+        const coveredCells = {};
+        slots.forEach(slot => {
+            const key = `${slot.day_name}-${slot.start_hour_index}`;
+            slotMap[key] = slot;
+            for (let h = slot.start_hour_index + 1; h <= slot.end_hour_index; h++) {
+                coveredCells[`${slot.day_name}-${h}`] = true;
+            }
         });
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${this.currentDepartment.name}_Ders_Programi.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.showToast('Excel formatında ders programı indirildi.', 'success');
+        // Tablo satırlarını oluştur (12 saat dilimi)
+        TIME_SLOTS.forEach(timeSlot => {
+            const row = [`${timeSlot.index + 1}. Ders\r\n(${timeSlot.start} - ${timeSlot.end})`];
+
+            DAYS_OF_WEEK.forEach((day, dayIndex) => {
+                const cellKey = `${day}-${timeSlot.index}`;
+                const colIndex = dayIndex + 1;
+                const rowIndex = 6 + timeSlot.index;
+
+                if (coveredCells[cellKey]) {
+                    row.push("");
+                    return;
+                }
+
+                if (slotMap[cellKey]) {
+                    const slot = slotMap[cellKey];
+                    const rowSpan = (slot.end_hour_index - slot.start_hour_index) + 1;
+                    
+                    let cellText = `${slot.course_code || ''} - ${slot.course_name || ''}\r\n📍 Derslik: ${slot.classroom_code || ''}`;
+                    if (!isInstructorMode) {
+                        cellText += `\r\n👨‍🏫 ${slot.instructor_name || ''}`;
+                    }
+                    cellText += `\r\n🎓 ${slot.grade_level}. Sınıf (${slot.start_time} - ${slot.end_time})`;
+
+                    row.push(cellText);
+
+                    if (rowSpan > 1) {
+                        merges.push({
+                            s: { r: rowIndex, c: colIndex },
+                            e: { r: rowIndex + rowSpan - 1, c: colIndex }
+                        });
+                    }
+                } else {
+                    row.push("");
+                }
+            });
+
+            wsData.push(row);
+        });
+
+        // İmza satırı
+        wsData.push(["", "", "", "", "", "", ""]);
+        wsData.push(["Hazırlayan / Program Koordinatörü\r\nİmza / Tarih", "", "", "", "Bölüm Başkanı / Dekan\r\nMühür / Onay", "", ""]);
+        merges.push({ s: { r: wsData.length - 1, c: 0 }, e: { r: wsData.length - 1, c: 2 } });
+        merges.push({ s: { r: wsData.length - 1, c: 4 }, e: { r: wsData.length - 1, c: 6 } });
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        ws['!merges'] = merges;
+
+        // Kolon genişlikleri
+        ws['!cols'] = [
+            { wch: 22 }, // Saat / Gün
+            { wch: 34 }, // Pazartesi
+            { wch: 34 }, // Salı
+            { wch: 34 }, // Çarşamba
+            { wch: 34 }, // Perşembe
+            { wch: 34 }, // Cuma
+            { wch: 34 }  // Cumartesi
+        ];
+
+        // Satır yükseklikleri
+        const rowHeights = [
+            { hpt: 26 },
+            { hpt: 22 },
+            { hpt: 20 },
+            { hpt: 16 },
+            { hpt: 10 },
+            { hpt: 26 }
+        ];
+        for (let i = 0; i < TIME_SLOTS.length; i++) {
+            rowHeights.push({ hpt: 52 });
+        }
+        rowHeights.push({ hpt: 14 });
+        rowHeights.push({ hpt: 38 });
+        ws['!rows'] = rowHeights;
+
+        // Tüm hücreler için ortalama ve metin kaydırma stili
+        if (ws['!ref']) {
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+                    if (!ws[addr].s) ws[addr].s = {};
+                    ws[addr].s.alignment = {
+                        vertical: 'center',
+                        horizontal: 'center',
+                        wrapText: true
+                    };
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, "Ders_Programi");
+        XLSX.writeFile(wb, cleanFileName);
+        this.showToast(`Excel (.xlsx) dosyası indirildi: ${cleanFileName}`, 'success');
+    }
+
+    printCleanSchedule(slots, options = {}) {
+        const facultyName = options.facultyName || (this.currentFaculty ? this.currentFaculty.name : "İlahiyat Fakültesi");
+        const deptName = options.departmentName || (this.currentDepartment ? this.currentDepartment.name : "Temel İslam Bilimleri Bölümü");
+        const subtitle = options.subtitle || "2025-2026 Eğitim-Öğretim Yılı Bahar Yarıyılı";
+        const filterLabel = options.filterLabel || (this.currentGradeLevel === 0 ? "Tüm Sınıflar Haftalık Ders Programı" : `${this.currentGradeLevel}. Sınıf Haftalık Ders Programı`);
+        const isInstructor = options.isInstructor || false;
+        const instructorName = options.instructorName || "";
+        const instructorEmail = options.instructorEmail || "";
+
+        const slotMap = {};
+        const coveredCells = {};
+        (slots || []).forEach(slot => {
+            const key = `${slot.day_name}-${slot.start_hour_index}`;
+            slotMap[key] = slot;
+            for (let h = slot.start_hour_index + 1; h <= slot.end_hour_index; h++) {
+                coveredCells[`${slot.day_name}-${h}`] = true;
+            }
+        });
+
+        let tableRowsHtml = '';
+        TIME_SLOTS.forEach(timeSlot => {
+            tableRowsHtml += '<tr>';
+            tableRowsHtml += `
+                <td class="time-col-cell">
+                    <div class="slot-num">${timeSlot.index + 1}. Ders</div>
+                    <div class="slot-time">${timeSlot.start} - ${timeSlot.end}</div>
+                </td>
+            `;
+
+            DAYS_OF_WEEK.forEach(day => {
+                const cellKey = `${day}-${timeSlot.index}`;
+                if (coveredCells[cellKey]) return;
+
+                if (slotMap[cellKey]) {
+                    const slot = slotMap[cellKey];
+                    const rowSpan = (slot.end_hour_index - slot.start_hour_index) + 1;
+                    tableRowsHtml += `
+                        <td class="occupied-cell" rowspan="${rowSpan}">
+                            <div class="cell-course-code">${slot.course_code || 'DERS'}</div>
+                            <div class="cell-course-name">${slot.course_name || ''}</div>
+                            <div class="cell-room">📍 ${slot.classroom_code || ''}</div>
+                            ${!isInstructor ? `<div class="cell-inst">👨‍🏫 ${slot.instructor_name || ''}</div>` : ''}
+                            <div class="cell-grade">🎓 ${slot.grade_level}. Sınıf (${slot.start_time} - ${slot.end_time})</div>
+                        </td>
+                    `;
+                } else {
+                    tableRowsHtml += `<td class="empty-cell"></td>`;
+                }
+            });
+
+            tableRowsHtml += '</tr>';
+        });
+
+        const printHtml = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>${facultyName} - ${deptName} Ders Programı</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 6mm 8mm 6mm 8mm;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        body {
+            background: #ffffff;
+            color: #0f172a;
+            padding: 2px;
+            font-size: 10px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #8B2332;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 6px;
+            background: #8B2332;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: -1px;
+        }
+        .header-titles h1 {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #1B2A4A;
+            margin: 0;
+            line-height: 1.2;
+        }
+        .header-titles h2 {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #8B2332;
+            margin: 2px 0 0 0;
+            line-height: 1.2;
+        }
+        .header-titles .meta-sub {
+            font-size: 9px;
+            color: #475569;
+            margin-top: 2px;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .badge-pill {
+            display: inline-block;
+            background: #F1F5F9;
+            border: 1px solid #CBD5E1;
+            color: #1E293B;
+            font-size: 9.5px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .date-str {
+            font-size: 8.5px;
+            color: #64748B;
+            margin-top: 3px;
+        }
+        table.print-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        table.print-table th, table.print-table td {
+            border: 1px solid #CBD5E1;
+            text-align: center;
+            vertical-align: middle;
+        }
+        table.print-table th {
+            background: #1B2A4A !important;
+            color: #ffffff !important;
+            font-size: 9.5px;
+            font-weight: 600;
+            padding: 4px 2px;
+            height: 22px;
+        }
+        table.print-table th.time-head {
+            width: 72px;
+            background: #0f172a !important;
+        }
+        td.time-col-cell {
+            background: #F8FAFC !important;
+            padding: 2px;
+            width: 72px;
+        }
+        .slot-num {
+            font-weight: 700;
+            font-size: 9px;
+            color: #334155;
+        }
+        .slot-time {
+            font-size: 8px;
+            color: #64748B;
+            white-space: nowrap;
+        }
+        td.empty-cell {
+            background: #FFFFFF;
+            height: 34px;
+        }
+        td.occupied-cell {
+            background: #F8FAFC !important;
+            border: 1.5px solid #8B2332 !important;
+            padding: 2px 4px;
+            line-height: 1.25;
+        }
+        .cell-course-code {
+            font-weight: 700;
+            font-size: 9.5px;
+            color: #8B2332;
+        }
+        .cell-course-name {
+            font-weight: 600;
+            font-size: 8.5px;
+            color: #0F172A;
+            margin: 1px 0;
+            word-wrap: break-word;
+        }
+        .cell-room {
+            font-size: 8px;
+            color: #1E293B;
+            font-weight: 600;
+        }
+        .cell-inst {
+            font-size: 7.5px;
+            color: #475569;
+        }
+        .cell-grade {
+            font-size: 7.5px;
+            color: #475569;
+            display: inline-block;
+            background: #E2E8F0;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-top: 1px;
+        }
+        .footer-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 8px;
+            padding-top: 4px;
+            border-top: 1px solid #E2E8F0;
+            font-size: 8px;
+            color: #64748B;
+        }
+        .signatures {
+            display: flex;
+            gap: 40px;
+        }
+        .sign-box {
+            text-align: center;
+            width: 140px;
+        }
+        .sign-title {
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 22px;
+        }
+        .sign-line {
+            border-top: 1px dashed #94A3B8;
+            padding-top: 2px;
+            color: #94A3B8;
+            font-size: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-box">29M</div>
+            <div class="header-titles">
+                <h1>T.C. İSTANBUL 29 MAYIS ÜNİVERSİTESİ</h1>
+                <h2>${facultyName} / ${deptName}</h2>
+                <div class="meta-sub">${subtitle} • ${filterLabel}</div>
+            </div>
+        </div>
+        <div class="header-right">
+            ${isInstructor ? `
+                <div class="badge-pill">👨‍🏫 ${instructorName}</div>
+                <div class="date-str">${instructorEmail ? '✉️ ' + instructorEmail + ' • ' : ''}Tarih: ${new Date().toLocaleDateString('tr-TR')}</div>
+            ` : `
+                <div class="badge-pill">🏛️ Ders Programı Koordinatörlüğü</div>
+                <div class="date-str">Tarih: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}</div>
+            `}
+        </div>
+    </div>
+
+    <table class="print-table">
+        <thead>
+            <tr>
+                <th class="time-head">Saat / Gün</th>
+                ${DAYS_OF_WEEK.map(d => `<th>${d}</th>`).join('')}
+            </tr>
+        </thead>
+        <tbody>
+            ${tableRowsHtml}
+        </tbody>
+    </table>
+
+    <div class="footer-bar">
+        <div>
+            Bu program çizelgesi İstanbul 29 Mayıs Üniversitesi Akademik Planlama Sistemi tarafından üretilmiştir.
+        </div>
+        <div class="signatures">
+            <div class="sign-box">
+                <div class="sign-title">Hazırlayan / Koordinatör</div>
+                <div class="sign-line">İmza / Tarih</div>
+            </div>
+            <div class="sign-box">
+                <div class="sign-title">Bölüm Başkanı / Dekan</div>
+                <div class="sign-line">Mühür / Onay</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+
+        let printFrame = document.getElementById('cleanPrintIframe');
+        if (printFrame) {
+            printFrame.remove();
+        }
+        printFrame = document.createElement('iframe');
+        printFrame.id = 'cleanPrintIframe';
+        printFrame.style.position = 'fixed';
+        printFrame.style.right = '0';
+        printFrame.style.bottom = '0';
+        printFrame.style.width = '0';
+        printFrame.style.height = '0';
+        printFrame.style.border = '0';
+        document.body.appendChild(printFrame);
+
+        const doc = printFrame.contentWindow.document;
+        doc.open();
+        doc.write(printHtml);
+        doc.close();
+
+        setTimeout(() => {
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
+            setTimeout(() => {
+                if (printFrame && printFrame.parentNode) {
+                    printFrame.parentNode.removeChild(printFrame);
+                }
+            }, 3000);
+        }, 400);
     }
 
     // =============================================================
@@ -776,16 +1271,186 @@ class UniversityApp {
         if (res && res.success) {
             box.style.display = 'block';
             box.innerHTML = `
-                <strong>✅ E-Postalar Başarıyla İletildi!</strong><br>
-                ${res.message || 'Öğretim elemanlarının kurumsal mail adreslerine haftalık ders çizelgesi gönderildi.'}
+                <strong>✅ Kişisel Ders Programları Başarıyla İletildi!</strong><br>
+                Haftalık ders programı, her hocamız için <strong>Kişisel PDF Çizelgesi</strong> ve <strong>Excel (.xlsx)</strong> formatında eklenerek kurumsal e-posta adreslerine (@29mayis.edu.tr) güvenle iletilmiştir.<br>
+                <span style="display:inline-block;margin-top:4px;font-size:0.8rem;color:#047857;">${res.message || 'Gönderim tamamlandı.'}</span>
             `;
-            this.showToast('Ders programı hocalara iletildi!', 'success');
+            this.showToast('Kişisel PDF ve XLSX programları hocalara iletildi!', 'success');
         } else {
             this.showToast('Gönderim sırasında hata oluştu.', 'danger');
         }
 
         btn.disabled = false;
-        btn.textContent = '🚀 Programı E-Posta Olarak Gönder';
+        btn.textContent = '🚀 Programı E-Posta Olarak Gönder (PDF + XLSX Ekli)';
+    }
+
+    // =============================================================
+    // HOCA KİŞİSEL DERS PROGRAMI ÖN İZLEME VE ÇIKTI MOTORU
+    // =============================================================
+    openInstructorPreviewModal(targetInstId = null) {
+        const select = document.getElementById('previewInstSelect');
+        const deptInsts = this.initialData.instructors.filter(i => i.department_id == this.currentDepartment.id);
+
+        select.innerHTML = '';
+        deptInsts.forEach(i => {
+            const opt = document.createElement('option');
+            opt.value = i.id;
+            opt.textContent = `👤 ${i.title || ''} ${i.name} (${i.email || 'e-posta'})`;
+            select.appendChild(opt);
+        });
+
+        let chosenId = targetInstId;
+        if (!chosenId && deptInsts.length > 0) {
+            chosenId = deptInsts[0].id;
+        }
+        if (chosenId) {
+            select.value = chosenId;
+        }
+
+        this.renderInstructorPreview(select.value);
+        document.getElementById('instructorPreviewModal').classList.add('active');
+    }
+
+    renderInstructorPreview(instId) {
+        const deptInsts = this.initialData.instructors.filter(i => i.department_id == this.currentDepartment.id);
+        const inst = deptInsts.find(i => i.id == instId) || deptInsts[0];
+        if (!inst) return;
+
+        this.currentPreviewInstructor = inst;
+
+        // Hocanın kendi ders slotlarını süz
+        const mySlots = this.scheduleSlots.filter(s => s.instructor_name && s.instructor_name.includes(inst.name));
+        const totalHours = mySlots.reduce((sum, s) => sum + ((s.end_hour_index - s.start_hour_index) + 1), 0);
+
+        // Özet rozetlerini doldur
+        const badgeEl = document.getElementById('previewInstSummaryBadge');
+        if (badgeEl) {
+            badgeEl.innerHTML = `
+                <span class="badge" style="background:#E2E8F0; color:#1E293B; font-weight:600; padding:0.35rem 0.65rem; border-radius:4px; font-size:0.8rem;">
+                    📚 ${mySlots.length} Ders Bloğu
+                </span>
+                <span class="badge" style="background:#DBEAFE; color:#1E40AF; font-weight:600; padding:0.35rem 0.65rem; border-radius:4px; font-size:0.8rem;">
+                    ⏱️ Haftalık ${totalHours} Saat
+                </span>
+                <span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:600; padding:0.35rem 0.65rem; border-radius:4px; font-size:0.8rem;">
+                    📧 ${inst.email || (inst.name.toLowerCase().replace(/\s+/g, '') + '@29mayis.edu.tr')}
+                </span>
+            `;
+        }
+
+        const container = document.getElementById('instructorPreviewGridContainer');
+        if (!container) return;
+
+        const slotMap = {};
+        const coveredCells = {};
+        mySlots.forEach(slot => {
+            const key = `${slot.day_name}-${slot.start_hour_index}`;
+            slotMap[key] = slot;
+            for (let h = slot.start_hour_index + 1; h <= slot.end_hour_index; h++) {
+                coveredCells[`${slot.day_name}-${h}`] = true;
+            }
+        });
+
+        let html = `
+            <table class="inst-preview-table">
+                <thead>
+                    <tr>
+                        <th class="time-col">Saat / Gün</th>
+                        ${DAYS_OF_WEEK.map(d => `<th>${d}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        TIME_SLOTS.forEach(timeSlot => {
+            html += '<tr>';
+            html += `
+                <td class="inst-time-cell">
+                    <div>${timeSlot.index + 1}. Ders</div>
+                    <div style="font-size:0.72rem; color:#64748B;">${timeSlot.start} - ${timeSlot.end}</div>
+                </td>
+            `;
+
+            DAYS_OF_WEEK.forEach(day => {
+                const cellKey = `${day}-${timeSlot.index}`;
+                if (coveredCells[cellKey]) return;
+
+                if (slotMap[cellKey]) {
+                    const s = slotMap[cellKey];
+                    const rowSpan = (s.end_hour_index - s.start_hour_index) + 1;
+                    html += `
+                        <td class="inst-occupied-cell" rowspan="${rowSpan}">
+                            <div class="inst-card">
+                                <div class="inst-card-code">${s.course_code || 'DERS'}</div>
+                                <div class="inst-card-title">${s.course_name}</div>
+                                <div style="margin-top: 3px;">
+                                    <span class="inst-card-room">📍 ${s.classroom_code}</span>
+                                    <span class="inst-card-grade">🎓 ${s.grade_level}. Sınıf</span>
+                                </div>
+                                <div style="font-size:0.72rem; color:#64748B; margin-top:2px;">
+                                    ⏱️ ${s.start_time} - ${s.end_time}
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                } else {
+                    html += `<td class="inst-empty-cell"><span style="opacity:0.35;">—</span></td>`;
+                }
+            });
+
+            html += '</tr>';
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    printCurrentPreviewInstructor() {
+        if (!this.currentPreviewInstructor) return;
+        const inst = this.currentPreviewInstructor;
+        const mySlots = this.scheduleSlots.filter(s => s.instructor_name && s.instructor_name.includes(inst.name));
+        this.printCleanSchedule(mySlots, {
+            isInstructor: true,
+            instructorName: `${inst.title || ''} ${inst.name}`,
+            instructorEmail: inst.email || `${inst.name.toLowerCase().replace(/\s+/g, '')}@29mayis.edu.tr`,
+            subtitle: '2025-2026 Eğitim-Öğretim Yılı Bahar Yarıyılı',
+            filterLabel: 'Öğretim Elemanı Kişisel Haftalık Ders Programı'
+        });
+    }
+
+    exportCurrentPreviewInstructorXlsx() {
+        if (!this.currentPreviewInstructor) return;
+        this.exportScheduleToExcel(true, this.currentPreviewInstructor);
+    }
+
+    async sendCurrentPreviewInstructorEmail() {
+        if (!this.currentPreviewInstructor) return;
+        const inst = this.currentPreviewInstructor;
+        const btn = document.getElementById('btnInstPreviewSendSingle');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'İletiliyor...';
+        }
+
+        const res = await apiRequest('send_schedule_email', 'POST', {
+            department_id: this.currentDepartment.id,
+            instructor_id: inst.id
+        });
+
+        if (res && res.success) {
+            this.showToast(`${inst.title || ''} ${inst.name} için kişisel program (PDF ve XLSX ekli) başarıyla gönderildi!`, 'success');
+        } else {
+            this.showToast('E-posta gönderiminde hata oluştu.', 'danger');
+        }
+
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '✉️ Bu Hocaya E-Posta Gönder';
+        }
     }
 
     showToast(message, type = 'info') {

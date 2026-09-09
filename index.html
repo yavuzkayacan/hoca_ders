@@ -62,10 +62,10 @@
                 <button type="button" class="btn btn-primary btn-sm" id="btnOpenSendModal" title="Bölüm Hocalarına Haftalık Programı E-Posta ile Gönder">
                     ✉️ Hocalara Program Gönder
                 </button>
-                <button type="button" class="btn btn-outline btn-sm" id="btnExportExcel" title="Excel Formatında İndir (CSV)">
-                    📥 Excel İndir
+                <button type="button" class="btn btn-outline btn-sm" id="btnExportExcel" title="Gerçek Excel Formatında İndir (.xlsx)">
+                    📥 Excel İndir (XLSX)
                 </button>
-                <button type="button" class="btn btn-outline btn-sm" id="btnPrintSchedule" title="Yazdır veya PDF Kaydet">
+                <button type="button" class="btn btn-outline btn-sm" id="btnPrintSchedule" title="Yalnızca Program Tablosunu Yazdır veya PDF Kaydet">
                     🖨️ Yazdır / PDF
                 </button>
             </div>
@@ -382,19 +382,29 @@
             </div>
             <div class="modal-body">
                 <p style="font-size: 0.88rem; color: var(--text-muted);">
-                    Haftalık oluşturulan ders ve derslik programını bölüm hocalarının kurumsal e-postalarına (@29mayis.edu.tr) gönderebilirsiniz.
+                    Haftalık oluşturulan ders ve derslik programını bölüm hocalarının kurumsal e-postalarına (@29mayis.edu.tr) gönderebilirsiniz. Her hocaya yalnızca kendi derslerini içeren kişiselleştirilmiş program PDF ve Excel (.xlsx) eki olarak iletilir.
                 </p>
 
                 <div class="form-group" style="margin-top: 0.75rem;">
                     <label for="sendTargetSelect">Gönderim Türü / Hedef</label>
-                    <select id="sendTargetSelect" class="form-control">
-                        <option value="all">📢 Tüm Bölüm Hocalarına Toplu Gönder (Herkesin Kendi Programı)</option>
-                    </select>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <select id="sendTargetSelect" class="form-control" style="flex: 1;">
+                            <option value="all">📢 Tüm Bölüm Hocalarına Toplu Gönder (Herkesin Kendi Programı)</option>
+                        </select>
+                        <button type="button" class="btn btn-gold btn-sm" id="btnOpenInstPreview" style="white-space: nowrap; height: 38px; display: inline-flex; align-items: center; gap: 0.35rem;" title="Hocanın Kişisel Tablosunu Ön İzle">
+                            👁️ Tabloyu Ön İzle
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Önizleme Kutusu -->
                 <div style="background: var(--surface-alt); border: 1px solid var(--surface-border); border-radius: var(--radius-md); padding: 1rem; margin-top: 0.75rem;">
-                    <h5 style="color: var(--navy); margin-bottom: 0.5rem;" id="sendPreviewTitle">Önizleme: Tüm Bölüm Hocaları</h5>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h5 style="color: var(--navy); margin: 0;" id="sendPreviewTitle">Önizleme: Tüm Bölüm Hocaları</h5>
+                        <button type="button" class="btn btn-outline btn-sm" id="btnOpenInstPreviewDirect" style="font-size: 0.75rem; padding: 0.2rem 0.6rem;">
+                            🔍 Detaylı Tablo Ön İzleme
+                        </button>
+                    </div>
                     <div id="sendPreviewContent" style="font-size: 0.84rem; max-height: 220px; overflow-y: auto; color: var(--text-main); line-height: 1.6;">
                         <!-- JS ile doldurulacak -->
                     </div>
@@ -407,8 +417,62 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('sendScheduleModal').classList.remove('active');">Kapat</button>
                 <button type="button" class="btn btn-primary btn-sm" id="btnConfirmSendSchedule" onclick="window.app.dispatchScheduleEmail()">
-                    🚀 Programı E-Posta Olarak Gönder
+                    🚀 Programı E-Posta Olarak Gönder (PDF + XLSX Ekli)
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. HOCA KİŞİSEL DERS PROGRAMI ÖN İZLEME VE ÇIKTI MODALI -->
+    <div class="modal-overlay" id="instructorPreviewModal" style="z-index: 1050;">
+        <div class="modal-content" style="max-width: 1050px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 1.5rem;">👨‍🏫</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; color: var(--navy);">Öğretim Elemanı Kişisel Ders Programı Ön İzleme</h3>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Yalnızca seçili hocanın derslerini içeren haftalık çizelge, PDF ve Excel çıktıları</p>
+                    </div>
+                </div>
+                <button type="button" class="modal-close" onclick="document.getElementById('instructorPreviewModal').classList.remove('active');">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.25rem; overflow-y: auto; flex: 1;">
+                <!-- Hoca Seçimi & Özet Barı -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--surface-alt); padding: 0.85rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--surface-border);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 280px;">
+                        <label for="previewInstSelect" style="font-weight: 600; font-size: 0.88rem; color: var(--navy); white-space: nowrap; margin: 0;">Öğretim Elemanı:</label>
+                        <select id="previewInstSelect" class="form-control" style="font-size: 0.9rem; font-weight: 600;"></select>
+                    </div>
+                    <div id="previewInstSummaryBadge" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <!-- JS ile: Toplam Saat, Ders Sayısı, E-posta vs. -->
+                    </div>
+                </div>
+
+                <!-- Butonlar Çubuğu -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem;">
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">
+                        📌 Tabloda yalnızca seçili hocanın dersleri görüntülenmektedir.
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline btn-sm" id="btnInstPreviewPdf" title="Yalnızca Bu Hocanın Programını PDF Olarak Kaydet / Yazdır">
+                            🖨️ Kişisel PDF / Yazdır
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" id="btnInstPreviewXlsx" title="Bu Hocanın Programını Hücreleri Birleştirilmiş Excel Olarak İndir">
+                            📥 Kişisel Excel (.xlsx) İndir
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnInstPreviewSendSingle" title="Yalnızca Bu Hocaya PDF ve XLSX Ekli E-Posta İlet">
+                            ✉️ Bu Hocaya E-Posta Gönder
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ön İzleme Tablosu Konteyneri -->
+                <div id="instructorPreviewGridContainer" style="margin-top: 0.85rem; border: 1px solid var(--surface-border); border-radius: var(--radius-md); background: #ffffff; padding: 0.5rem;">
+                    <!-- JS ile çizilecek haftalık tablo -->
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('instructorPreviewModal').classList.remove('active');">Kapat</button>
             </div>
         </div>
     </div>
@@ -416,9 +480,10 @@
     <!-- Bildirim Konteyneri -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script src="js/mock-data.js?v=20260909_05"></script>
-    <script src="js/conflict-checker.js?v=20260909_05"></script>
-    <script src="js/schedule-grid.js?v=20260909_05"></script>
-    <script src="js/app.js?v=20260909_05"></script>
+    <script src="js/xlsx.full.min.js"></script>
+    <script src="js/mock-data.js?v=20260909_06"></script>
+    <script src="js/conflict-checker.js?v=20260909_06"></script>
+    <script src="js/schedule-grid.js?v=20260909_06"></script>
+    <script src="js/app.js?v=20260909_06"></script>
 </body>
 </html>
