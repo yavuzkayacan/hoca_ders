@@ -79,6 +79,18 @@ async function apiRequest(action, method = 'GET', bodyData = null) {
  * Tam Donanımlı LocalStorage API Taklitçisi (GitHub Pages ve Çevrimdışı Çalışma İçin)
  */
 function handleLocalStorageApi(action, method, body) {
+    // 0. Action adını ve parametrelerini ayrıştır (örn: get_schedule&department_id=1&grade_level=0)
+    let actionName = action;
+    const queryParams = {};
+    if (action.includes('&') || action.includes('?')) {
+        const parts = action.split(/[&?]/);
+        actionName = parts[0];
+        for (let i = 1; i < parts.length; i++) {
+            const pair = parts[i].split('=');
+            if (pair[0]) queryParams[pair[0]] = decodeURIComponent(pair[1] || '');
+        }
+    }
+
     // 1. Veri kaynaklarını oku veya varsayılanları yükle
     let users = JSON.parse(localStorage.getItem('29m_users') || 'null');
     let classrooms = JSON.parse(localStorage.getItem('29m_classrooms') || 'null');
@@ -177,7 +189,7 @@ function handleLocalStorageApi(action, method, body) {
     // 2. EYLEMLER (ACTIONS)
 
     // Giriş Yap (Login)
-    if (action === 'login') {
+    if (actionName === 'login') {
         const uname = (body && body.username) ? body.username.trim() : '';
         const pass = (body && body.password) ? body.password.trim() : '';
         const user = users.find(u => (u.username === uname || u.email === uname) && (u.password_plain === pass || pass === '123456'));
@@ -195,7 +207,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Başlangıç Verileri
-    if (action === 'get_initial_data') {
+    if (actionName === 'get_initial_data') {
         return {
             success: true,
             data: {
@@ -209,24 +221,29 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Haftalık Ders Programını Getir
-    if (action === 'get_schedule') {
+    if (actionName === 'get_schedule') {
         const urlParams = new URLSearchParams(window.location.search);
-        let deptId = urlParams.get('dept');
-        if (!deptId && body && body.department_id) deptId = body.department_id;
-        
+        let deptId = queryParams.department_id || (body && body.department_id) || urlParams.get('dept');
+        let grade = parseInt(queryParams.grade_level || (body && body.grade_level) || 0);
+
         let filtered = slots;
         if (deptId) {
             const d = parseInt(deptId);
             filtered = filtered.filter(s => s.department_id === d);
         }
+        if (grade > 0) {
+            filtered = filtered.filter(s => s.grade_level === grade);
+        }
         return {
             success: true,
-            data: filtered
+            data: {
+                slots: filtered
+            }
         };
     }
 
     // Ders Programı Slotu Ekle / Güncelle
-    if (action === 'save_slot') {
+    if (actionName === 'save_slot') {
         const newSlot = {
             id: body.id ? parseInt(body.id) : Date.now(),
             department_id: parseInt(body.department_id || 1),
@@ -258,7 +275,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Slot Sil
-    if (action === 'delete_slot') {
+    if (actionName === 'delete_slot') {
         const sid = parseInt(body.slot_id || body.id || 0);
         slots = slots.filter(s => s.id !== sid);
         localStorage.setItem('29m_slots', JSON.stringify(slots));
@@ -269,7 +286,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Çakışma Kontrolü
-    if (action === 'check_conflict') {
+    if (actionName === 'check_conflict') {
         const cId = parseInt(body.classroom_id || 0);
         const day = body.day_name;
         const sH = parseInt(body.start_hour_index);
@@ -345,52 +362,89 @@ function handleLocalStorageApi(action, method, body) {
         };
     }
 
-    // Kampüs Doluluk Matrisi
-    if (action === 'get_occupancy_matrix') {
-        const urlParams = new URLSearchParams(window.location.search);
-        let day = urlParams.get('day') || (body && body.day_name) || 'Pazartesi';
-
-        const matrix = {};
-        classrooms.forEach(cr => {
-            matrix[cr.id] = {};
-            TIME_SLOTS.forEach(ts => {
-                const occ = slots.find(s => 
-                    s.classroom_id === cr.id &&
-                    s.day_name === day &&
-                    s.start_hour_index <= ts.index &&
-                    s.end_hour_index >= ts.index
-                );
-                matrix[cr.id][ts.index] = occ ? {
-                    is_occupied: true,
-                    course_code: occ.course_code,
-                    course_name: occ.course_name,
-                    instructor_name: occ.instructor_name,
-                    department_name: '29 Mayıs Üniv.'
-                } : { is_occupied: false };
-            });
-        });
-
+    // Kampüs Geneli Tüm Doluluk Slotları (Koordinatör ve Yönetici İçin)
+    if (actionName === 'get_all_occupancy' || actionName === 'get_occupancy_matrix') {
         return {
             success: true,
             data: {
-                day_name: day,
+                slots: slots,
                 classrooms: classrooms,
-                time_slots: TIME_SLOTS,
-                matrix: matrix
+                time_slots: TIME_SLOTS
             }
         };
     }
 
     // Kullanıcıları Getir (Admin için)
-    if (action === 'get_users') {
+    if (actionName === 'get_users') {
         return {
             success: true,
             data: users
         };
     }
 
+    // Kullanıcı Kaydet (Admin)
+    if (actionName === 'save_user') {
+        const uid = parseInt(body.id || 0);
+        const newUser = {
+            id: uid > 0 ? uid : Date.now(),
+            username: body.username,
+            full_name: body.full_name,
+            email: body.email,
+            role: body.role || 'coordinator',
+            faculty_id: body.faculty_id ? parseInt(body.faculty_id) : null,
+            department_id: body.department_id ? parseInt(body.department_id) : null,
+            faculty_name: body.faculty_name || '',
+            department_name: body.department_name || '',
+            password_plain: body.password || '123456'
+        };
+        if (uid > 0) {
+            users = users.map(u => u.id === uid ? { ...u, ...newUser } : u);
+        } else {
+            users.push(newUser);
+        }
+        localStorage.setItem('29m_users', JSON.stringify(users));
+        return { success: true, message: 'Kullanıcı kaydedildi.' };
+    }
+
+    // Kullanıcı Sil (Admin)
+    if (actionName === 'delete_user') {
+        const uid = parseInt(body.id || 0);
+        users = users.filter(u => u.id !== uid);
+        localStorage.setItem('29m_users', JSON.stringify(users));
+        return { success: true, message: 'Kullanıcı silindi.' };
+    }
+
+    // Derslik Kaydet (Admin)
+    if (actionName === 'save_classroom') {
+        const rid = parseInt(body.id || 0);
+        const newRoom = {
+            id: rid > 0 ? rid : Date.now(),
+            code: body.code,
+            name: body.name,
+            building: body.building,
+            capacity: parseInt(body.capacity || 50),
+            room_type: body.room_type || 'standard',
+            features: body.features || ''
+        };
+        if (rid > 0) {
+            classrooms = classrooms.map(r => r.id === rid ? { ...r, ...newRoom } : r);
+        } else {
+            classrooms.push(newRoom);
+        }
+        localStorage.setItem('29m_classrooms', JSON.stringify(classrooms));
+        return { success: true, message: 'Derslik kaydedildi.' };
+    }
+
+    // Derslik Sil (Admin)
+    if (actionName === 'delete_classroom') {
+        const rid = parseInt(body.id || 0);
+        classrooms = classrooms.filter(r => r.id !== rid);
+        localStorage.setItem('29m_classrooms', JSON.stringify(classrooms));
+        return { success: true, message: 'Derslik silindi.' };
+    }
+
     // Şifremi Unuttum
-    if (action === 'forgot_password') {
+    if (actionName === 'forgot_password') {
         const ident = (body && body.identifier) ? body.identifier.trim() : '';
         const user = users.find(u => u.email === ident || u.username === ident);
         if (user) {
@@ -410,7 +464,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Şifre Sıfırla
-    if (action === 'reset_password') {
+    if (actionName === 'reset_password') {
         const token = body.token;
         const newPass = body.password;
         const uname = localStorage.getItem('29m_reset_' + token);
@@ -430,7 +484,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Ders Ekle / Güncelle
-    if (action === 'save_course') {
+    if (actionName === 'save_course') {
         const cid = parseInt(body.id || 0);
         if (cid > 0) {
             courses = courses.map(c => c.id === cid ? { ...c, ...body } : c);
@@ -442,7 +496,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Ders Sil
-    if (action === 'delete_course') {
+    if (actionName === 'delete_course') {
         const cid = parseInt(body.id || 0);
         courses = courses.filter(c => c.id !== cid);
         localStorage.setItem('29m_courses', JSON.stringify(courses));
@@ -450,7 +504,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Hoca Ekle / Güncelle
-    if (action === 'save_instructor') {
+    if (actionName === 'save_instructor') {
         const iid = parseInt(body.id || 0);
         if (iid > 0) {
             instructors = instructors.map(i => i.id === iid ? { ...i, ...body } : i);
@@ -462,7 +516,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // Hoca Sil
-    if (action === 'delete_instructor') {
+    if (actionName === 'delete_instructor') {
         const iid = parseInt(body.id || 0);
         instructors = instructors.filter(i => i.id !== iid);
         localStorage.setItem('29m_instructors', JSON.stringify(instructors));
@@ -470,7 +524,7 @@ function handleLocalStorageApi(action, method, body) {
     }
 
     // E-posta Gönderimi
-    if (action === 'send_schedule_email') {
+    if (actionName === 'send_schedule_email') {
         return {
             success: true,
             message: 'Haftalık ders programı ilgili hocaların kurumsal gelen kutularına (@29mayis.edu.tr) iletildi.'

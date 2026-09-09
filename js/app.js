@@ -24,7 +24,7 @@ class UniversityApp {
     }
 
     async init() {
-        this.checkAuth();
+        if (!this.checkAuth()) return;
         this.initElements();
         await this.loadInitialData();
         this.setupUserDepartment();
@@ -38,21 +38,16 @@ class UniversityApp {
      */
     checkAuth() {
         const storedUser = sessionStorage.getItem('29m_user');
-        if (storedUser) {
+        if (!storedUser) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        
+        try {
             this.currentUser = JSON.parse(storedUser);
-        } else {
-            // Eger oturum yoksa varsayilan demo kullanici (Bilgisayar Muhendisligi) acilir
-            this.currentUser = {
-                id: 2,
-                username: 'ceng_baskan',
-                full_name: 'Bilgisayar Müh. Koordinatörü',
-                role: 'coordinator',
-                faculty_id: 1,
-                department_id: 1,
-                faculty_name: 'Mühendislik ve Doğa Bilimleri Fakültesi',
-                department_name: 'Bilgisayar Mühendisliği'
-            };
-            sessionStorage.setItem('29m_user', JSON.stringify(this.currentUser));
+        } catch (e) {
+            window.location.href = 'login.html';
+            return false;
         }
 
         // URL parametresi ile bolum degistirilmis mi kontrol et (?dept=6 gibi)
@@ -63,6 +58,7 @@ class UniversityApp {
         }
 
         this.renderUserHeader();
+        return true;
     }
 
     renderUserHeader() {
@@ -208,10 +204,10 @@ class UniversityApp {
     }
 
     async loadSchedule() {
-        const deptId = this.currentDepartment.id;
+        const deptId = (this.currentDepartment && this.currentDepartment.id) ? this.currentDepartment.id : (this.currentUser.department_id || 1);
         const res = await apiRequest(`get_schedule&department_id=${deptId}&grade_level=${this.currentGradeLevel}`);
         if (res && res.success && res.data) {
-            this.scheduleSlots = res.data.slots;
+            this.scheduleSlots = (res.data && res.data.slots) ? res.data.slots : (Array.isArray(res.data) ? res.data : []);
             this.grid.render(this.scheduleSlots);
         }
     }

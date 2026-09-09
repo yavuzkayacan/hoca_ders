@@ -38,14 +38,14 @@ class ScheduleGrid {
      * Izgarayi ve mevcut dersleri render eder
      */
     render(slots = []) {
-        this.currentSlots = slots;
+        this.currentSlots = Array.isArray(slots) ? slots : [];
         if (!this.container) return;
 
         // Hizli erisim icin slotlari haritalandir: { "Pazartesi-1": slotObj }
         const slotMap = {};
         const coveredCells = {}; // Birlestirilmis hucrelerin kapladigi alt satirlar
 
-        slots.forEach(slot => {
+        this.currentSlots.forEach(slot => {
             const key = `${slot.day_name}-${slot.start_hour_index}`;
             slotMap[key] = slot;
 

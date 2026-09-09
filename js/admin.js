@@ -16,7 +16,7 @@ class AdminPanel {
     }
 
     async init() {
-        this.checkAdminAuth();
+        if (!this.checkAdminAuth()) return;
         await this.loadInitialData();
         this.initTabs();
         this.initForms();
@@ -26,22 +26,27 @@ class AdminPanel {
 
     checkAdminAuth() {
         const stored = sessionStorage.getItem('29m_user');
-        let user = stored ? JSON.parse(stored) : null;
-        if (!user || user.role !== 'admin') {
-            // Demo amacli eger admin degilse veya linkle gelindiyse yonetici kimligi verilebilir veya login'e gonderilir
-            // Kullanici rahatligi icin otomatik admin oturumu olusturuyoruz
-            user = {
-                id: 1,
-                username: 'admin',
-                full_name: 'Sistem Yöneticisi',
-                role: 'admin',
-                email: 'admin@29mayis.edu.tr'
-            };
-            sessionStorage.setItem('29m_user', JSON.stringify(user));
+        let user = null;
+        try {
+            user = stored ? JSON.parse(stored) : null;
+        } catch (e) {
+            user = null;
+        }
+
+        if (!user) {
+            window.location.href = 'login.html';
+            return false;
+        }
+
+        if (user.role !== 'admin') {
+            alert('Bu sayfaya sadece Sistem Yöneticileri erişebilir. Lütfen Yönetici hesabı ile giriş yapınız.');
+            window.location.href = 'login.html';
+            return false;
         }
 
         const nameEl = document.getElementById('adminName');
         if (nameEl) nameEl.textContent = user.full_name || 'Admin';
+        return true;
     }
 
     async loadInitialData() {
